@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { FaDownload, FaArrowLeft, FaHeart, FaBorderNone } from "react-icons/fa";
+import { FaDownload, FaArrowLeft } from "react-icons/fa";
 import Button from "../components/UI/Button";
 
 const ResultContainer = styled.div`
@@ -84,15 +84,40 @@ const ColorOption = styled.div`
   }
 `;
 
+const ImagePicker = styled.div`
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+`;
+
+const ImageOption = styled.img`
+  width: 60px;
+  height: 60px;
+  cursor: pointer;
+  border: 2px solid
+    ${({ theme, selected }) =>
+      selected ? theme.colors.primary : "transparent"};
+  border-radius: 8px;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+`;
+
 const PhotoGrid = styled.div`
   display: grid;
   justify-items: center;
   grid-template-rows: repeat(4, 1fr);
-  gap: 0px;
-  background-image: ${({ backgroundImage }) => `url(${backgroundImage})`};
+  gap: 20px;
+  background: ${({ border }) =>
+    border.startsWith("#") ? border : `url(${border})`};
   background-size: cover;
-  padding: 30px;
-  width: 200px;
+  padding: 20px;
+  border-radius: 10px;
+  width: 250px;
 
   @media (max-width: 768px) {
     width: 100%;
@@ -102,78 +127,124 @@ const PhotoGrid = styled.div`
 
 const Photo = styled.img`
   width: 100%;
-  border: 5px solid ${({ borderColor }) => borderColor}; // Borda ao redor de cada foto
+  border-radius: 10px;
 `;
+
+const imageBorders = [
+  {
+    name: "Corações",
+    value: "/assets/back.jpg",
+    thumbnail: "/assets/hearts-thumb.jpg",
+  },
+  {
+    name: "Simples",
+    value: "/assets/simple.jpg",
+    thumbnail: "/assets/simple-thumb.jpg",
+  },
+];
+
+const colors = [
+  "#ffffff",
+  "#ff0000",
+  "#00ff00",
+  "#0000ff",
+  "#ffff00",
+  "#ff00ff",
+  "#00ffff",
+  "#000000",
+  "#808080",
+  "#800000",
+  "#008000",
+];
 
 const ResultPage = () => {
   const navigate = useNavigate();
   const photos = JSON.parse(localStorage.getItem("photos")) || [];
-  const [borderStyle, setBorderStyle] = useState("/assets/back.jpg");
-  const [borderColor, setBorderColor] = useState("#ffffff"); // Cor inicial da borda (branca)
-  const colors = [
-    "#ffffff",
-    "#ff0000",
-    "#00ff00",
-    "#0000ff",
-    "#ffff00",
-    "#ff00ff",
-    "#00ffff",
-    "#000000",
-    "#808080",
-    "#800000",
-    "#008000",
-  ]; // Opções de cores
+  const [border, setBorder] = useState("#ffffff");
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
-    const padding = 20; // Espaçamento interno
-    const borderWidth = 10; // Largura da borda
-    const photoSize = 200; // Tamanho de cada foto
-    const gap = 10; // Espaço entre as fotos
+    const padding = 20;
+    const photoSize = 250;
+    const gap = 20;
+    const borderRadius = 10; // Raio da borda arredondada
 
-    // Tamanho total do canvas
-    canvas.width = photoSize + 2 * padding + 2 * borderWidth;
-    canvas.height = 4 * photoSize + 3 * gap + 2 * padding + 2 * borderWidth;
+    canvas.width = photoSize + 2 * padding;
+    canvas.height = 4 * photoSize + 3 * gap + 2 * padding;
 
-    // Desenha o fundo personalizado
-    const backgroundImage = new Image();
-    backgroundImage.src = borderStyle;
-    backgroundImage.onload = () => {
+    const isColor = border.startsWith("#");
+
+    if (isColor) {
+      context.fillStyle = border;
+      context.fillRect(0, 0, canvas.width, canvas.height);
+    } else {
+      const backgroundImage = new Image();
+      backgroundImage.src = border;
+      await new Promise((resolve) => {
+        backgroundImage.onload = resolve;
+      });
       context.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+    }
 
-      // Array para armazenar as promessas de carregamento das fotos
-      const photoPromises = photos.map((photo) => {
-        return new Promise((resolve) => {
-          const img = new Image();
-          img.src = photo;
-          img.onload = () => resolve(img);
-        });
+    const photoPromises = photos.map((photo) => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous"; // Permite edição CORS
+        img.src = photo;
+        img.onload = () => resolve(img);
       });
+    });
 
-      // Aguarda todas as fotos serem carregadas
-      Promise.all(photoPromises).then((loadedPhotos) => {
-        // Desenha as fotos com borda ao redor de cada uma
-        loadedPhotos.forEach((img, index) => {
-          const x = padding + borderWidth;
-          const y = padding + borderWidth + index * (photoSize + gap);
+    const loadedPhotos = await Promise.all(photoPromises);
 
-          // Desenha a borda ao redor da foto
-          context.strokeStyle = borderColor;
-          context.lineWidth = borderWidth;
-          context.strokeRect(x, y, photoSize, photoSize);
+    loadedPhotos.forEach((img, index) => {
+      const x = padding;
+      const y = padding + index * (photoSize + gap);
 
-          // Desenha a foto
-          context.drawImage(img, x, y, photoSize, photoSize);
-        });
+      // Cria caminho arredondado
+      context.beginPath();
+      context.moveTo(x + borderRadius, y);
+      context.lineTo(x + photoSize - borderRadius, y);
+      context.quadraticCurveTo(
+        x + photoSize,
+        y,
+        x + photoSize,
+        y + borderRadius
+      );
+      context.lineTo(x + photoSize, y + photoSize - borderRadius);
+      context.quadraticCurveTo(
+        x + photoSize,
+        y + photoSize,
+        x + photoSize - borderRadius,
+        y + photoSize
+      );
+      context.lineTo(x + borderRadius, y + photoSize);
+      context.quadraticCurveTo(
+        x,
+        y + photoSize,
+        x,
+        y + photoSize - borderRadius
+      );
+      context.lineTo(x, y + borderRadius);
+      context.quadraticCurveTo(x, y, x + borderRadius, y);
+      context.closePath();
 
-        // Faz o download
-        const link = document.createElement("a");
-        link.download = "photo-grid.png";
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-      });
-    };
+      // Aplica o clipping path
+      context.save();
+      context.clip();
+
+      // Desenha a imagem
+      context.drawImage(img, x, y, photoSize, photoSize);
+
+      // Restaura o contexto
+      context.restore();
+    });
+
+    const link = document.createElement("a");
+    link.download = "photo-grid.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
   };
 
   const handleBackToCamera = () => {
@@ -183,14 +254,9 @@ const ResultPage = () => {
   return (
     <ResultContainer>
       <PhotosColumn>
-        <PhotoGrid backgroundImage={borderStyle}>
+        <PhotoGrid border={border}>
           {photos.map((photo, index) => (
-            <Photo
-              key={index}
-              src={photo}
-              alt={`Foto ${index}`}
-              borderColor={borderColor}
-            />
+            <Photo key={index} src={photo} alt={`Foto ${index}`} />
           ))}
         </PhotoGrid>
       </PhotosColumn>
@@ -198,26 +264,30 @@ const ResultPage = () => {
         <Section>
           <SectionTitle>Personalizar Borda</SectionTitle>
           <ButtonsGroup>
-            <Button onClick={() => setBorderStyle("/assets/back.jpg")}>
-              <FaHeart /> Borda com Corações
-            </Button>
-            <Button onClick={() => setBorderStyle("/assets/simple.jpg")}>
-              <FaBorderNone /> Borda Simples
-            </Button>
+            <SectionTitle>Cores</SectionTitle>
+            <ColorPicker>
+              {colors.map((color) => (
+                <ColorOption
+                  key={color}
+                  color={color}
+                  selected={border === color}
+                  onClick={() => setBorder(color)}
+                />
+              ))}
+            </ColorPicker>
+            <SectionTitle>Modelos</SectionTitle>
+            <ImagePicker>
+              {imageBorders.map((image) => (
+                <ImageOption
+                  key={image.value}
+                  src={image.thumbnail}
+                  alt={image.name}
+                  selected={border === image.value}
+                  onClick={() => setBorder(image.value)}
+                />
+              ))}
+            </ImagePicker>
           </ButtonsGroup>
-        </Section>
-        <Section>
-          <SectionTitle>Escolher Cor da Borda</SectionTitle>
-          <ColorPicker>
-            {colors.map((color) => (
-              <ColorOption
-                key={color}
-                color={color}
-                selected={borderColor === color}
-                onClick={() => setBorderColor(color)}
-              />
-            ))}
-          </ColorPicker>
         </Section>
         <Section>
           <SectionTitle>Ações</SectionTitle>
