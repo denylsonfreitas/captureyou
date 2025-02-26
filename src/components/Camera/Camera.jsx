@@ -5,6 +5,15 @@ import { motion } from "framer-motion";
 import { FaCamera, FaRedo, FaCheck } from "react-icons/fa";
 import Button from "../UI/Button";
 
+const ThemeToggle = styled(Button)`
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  z-index: 1000;
+`;
+
 const CameraContainer = styled.div`
   display: flex;
   justify-content: center;
@@ -77,7 +86,7 @@ const PhotosGrid = styled.div`
   }
 `;
 
-const CameraPage = () => {
+const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   const videoRef = useRef(null);
   const [photos, setPhotos] = useState([]);
   const [countdown, setCountdown] = useState(null);
@@ -145,6 +154,9 @@ const CameraPage = () => {
 
   return (
     <CameraContainer>
+      <ThemeToggle onClick={toggleTheme}>
+        {isDarkTheme ? "🌞" : "🌙"}
+      </ThemeToggle>
       <VideoColumn>
         <Video ref={videoRef} autoPlay />
         {countdown !== null && (

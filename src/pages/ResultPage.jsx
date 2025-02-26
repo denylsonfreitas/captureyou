@@ -4,12 +4,22 @@ import styled from "styled-components";
 import { FaDownload, FaArrowLeft } from "react-icons/fa";
 import Button from "../components/UI/Button";
 
+const ThemeToggle = styled(Button)`
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  z-index: 1000;
+`;
+
 const ResultContainer = styled.div`
   display: flex;
   gap: 20px;
   background: ${({ theme }) => theme.colors.background};
   padding: 20px;
   min-height: 100vh;
+  overflow-y: auto;
 
   @media (max-width: 768px) {
     flex-direction: column;
@@ -22,7 +32,8 @@ const PhotosColumn = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  padding: 20px;
+  border-radius: 10px;
 `;
 
 const ControlsColumn = styled.div`
@@ -42,10 +53,10 @@ const Section = styled.div`
   background: ${({ theme }) => theme.colors.cardBackground};
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
   gap: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 `;
 
 const SectionTitle = styled.h3`
@@ -66,6 +77,7 @@ const ColorPicker = styled.div`
   gap: 10px;
   flex-wrap: wrap;
   justify-content: center;
+  overflow-y: hidden;
 `;
 
 const ColorOption = styled.div`
@@ -78,6 +90,7 @@ const ColorOption = styled.div`
     ${({ theme, selected }) =>
       selected ? theme.colors.primary : "transparent"};
   transition: transform 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 
   &:hover {
     transform: scale(1.1);
@@ -89,18 +102,20 @@ const ImagePicker = styled.div`
   gap: 10px;
   flex-wrap: wrap;
   justify-content: center;
+  overflow-y: hidden;
 `;
 
 const ImageOption = styled.img`
-  width: 60px;
-  height: 60px;
+  width: 40px;
+  height: 40px;
   cursor: pointer;
   border: 2px solid
     ${({ theme, selected }) =>
       selected ? theme.colors.primary : "transparent"};
-  border-radius: 8px;
+  border-radius: 25px;
   object-fit: cover;
   transition: transform 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 
   &:hover {
     transform: scale(1.1);
@@ -118,6 +133,7 @@ const PhotoGrid = styled.div`
   padding: 20px;
   border-radius: 10px;
   width: 250px;
+  box-shadow: 0 4px 10px rgba(0, 0.2, 0, 0.2);
 
   @media (max-width: 768px) {
     width: 100%;
@@ -157,7 +173,7 @@ const colors = [
   "#008000",
 ];
 
-const ResultPage = () => {
+const ResultPage = ({ toggleTheme, isDarkTheme }) => {
   const navigate = useNavigate();
   const photos = JSON.parse(localStorage.getItem("photos")) || [];
   const [border, setBorder] = useState("#ffffff");
@@ -253,6 +269,9 @@ const ResultPage = () => {
 
   return (
     <ResultContainer>
+      <ThemeToggle onClick={toggleTheme}>
+        {isDarkTheme ? "🌞" : "🌙"}
+      </ThemeToggle>
       <PhotosColumn>
         <PhotoGrid border={border}>
           {photos.map((photo, index) => (

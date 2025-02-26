@@ -1,10 +1,10 @@
 import React from "react";
 import Camera from "../components/Camera/Camera";
 
-const CameraPage = () => {
+const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   return (
     <div>
-      <Camera />
+      <Camera toggleTheme={toggleTheme} isDarkTheme={isDarkTheme} />
     </div>
   );
 };

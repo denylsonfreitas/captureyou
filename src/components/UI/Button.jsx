@@ -1,29 +1,37 @@
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { FaDownload, FaArrowLeft } from "react-icons/fa";
 
-const StyledButton = styled(motion.button)`
+const StyledButton = styled.button`
   background: ${({ theme }) => theme.colors.primary};
-  color: ${({ theme }) => theme.colors.background};
+  color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
+  padding: ${({ theme }) => theme.spacing.medium}
+    ${({ theme }) => theme.spacing.large};
+  border-radius: ${({ theme }) => theme.radii.full};
   font-size: 1rem;
-  font-weight: bold;
-  transition: transform 0.2s ease;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s ease, opacity 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: ${({ theme }) => theme.shadows.button};
 
   &:hover {
-    transform: scale(1.05);
+    opacity: 0.95;
+  }
+
+  &:active {
+    opacity: 0.85;
   }
 `;
 
-const Button = ({ children, onClick }) => {
+const Button = ({ children, icon, ...props }) => {
+  const Icon = icon === "download" ? FaDownload : FaArrowLeft;
   return (
-    <StyledButton
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={onClick}
-    >
+    <StyledButton {...props}>
+      {icon && <Icon />}
       {children}
     </StyledButton>
   );
