@@ -245,15 +245,18 @@ const Countdown = styled(motion.div)`
   margin-right: 16px;
 `;
 
-const MemoizedCamera = memo(({ onCameraReady, isMirrored, selectedFilter }) => {
-  return (
-    <Camera
-      onCameraReady={onCameraReady}
-      isMirrored={isMirrored}
-      selectedFilter={selectedFilter}
-    />
-  );
-});
+const MemoizedCamera = memo(
+  ({ onCameraReady, isMirrored, selectedFilter, flashMode }) => {
+    return (
+      <Camera
+        onCameraReady={onCameraReady}
+        isMirrored={isMirrored}
+        selectedFilter={selectedFilter}
+        flashMode={flashMode}
+      />
+    );
+  }
+);
 
 const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   const videoRef = useRef(null);
@@ -266,10 +269,12 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   const [isMirrored, setIsMirrored] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState("none");
   const [flashMode, setFlashMode] = useState("off");
+  const triggerFlashRef = useRef(null);
 
   // Função de callback memorizada para evitar re-renderizações
-  const handleCameraReady = useRef((video) => {
+  const handleCameraReady = useRef((video, triggerFlash) => {
     videoRef.current = video;
+    triggerFlashRef.current = triggerFlash;
   }).current;
 
   useEffect(() => {
@@ -278,6 +283,12 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
 
   const capturePhoto = () => {
     if (photosRef.current.length >= 4) return;
+
+    // Acionar o flash se estiver ativado
+    if (flashMode === "on" && triggerFlashRef.current) {
+      triggerFlashRef.current();
+    }
+
     const canvas = document.createElement("canvas");
 
     // Reduzir as dimensões da imagem capturada
@@ -493,8 +504,6 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
 
   const handleFlashMode = (mode) => {
     setFlashMode(mode);
-    // Implementação do flash seria feita aqui
-    // Poderia usar uma div com fundo branco que aparece brevemente
   };
 
   return (
@@ -515,6 +524,7 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                 onCameraReady={handleCameraReady}
                 isMirrored={isMirrored}
                 selectedFilter={selectedFilter}
+                flashMode={flashMode}
               />
             </CameraWrapper>
 

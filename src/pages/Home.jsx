@@ -110,10 +110,7 @@ const Home = ({ toggleTheme, isDarkTheme }) => {
         <ContentWrapper>
           <Title variants={itemVariants}>CaptureYou</Title>
 
-          <Subtitle variants={itemVariants}>
-            Crie memórias únicas com nossa experiência fotográfica inovadora.
-            Capture momentos especiais com tecnologia de ponta e design moderno.
-          </Subtitle>
+          <Subtitle variants={itemVariants}>Crie memórias únicas!</Subtitle>
 
           <motion.div variants={itemVariants}>
             <ActionButton

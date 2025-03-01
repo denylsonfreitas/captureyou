@@ -1,6 +1,6 @@
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useEffect, useCallback, useState } from "react";
 import styled from "styled-components";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const CameraWrapper = styled(motion.div)`
   position: relative;
@@ -145,15 +145,28 @@ const RecordingIndicator = styled(motion.div)`
   z-index: 2;
 `;
 
+const FlashOverlay = styled(motion.div)`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: white;
+  z-index: 10;
+  pointer-events: none;
+`;
+
 const Camera = ({
   onCameraReady,
   isMirrored = true,
   selectedFilter = "none",
+  flashMode = "off",
 }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
   const animationRef = useRef(null);
+  const [showFlash, setShowFlash] = useState(false);
 
   const applyFilter = useCallback((context, width, height, filter) => {
     // Simple filter implementations
@@ -232,6 +245,16 @@ const Camera = ({
     renderFrame();
   }, [isMirrored, selectedFilter, applyFilter]);
 
+  // Função para ativar o flash
+  const triggerFlash = useCallback(() => {
+    if (flashMode === "on") {
+      setShowFlash(true);
+      setTimeout(() => {
+        setShowFlash(false);
+      }, 300);
+    }
+  }, [flashMode]);
+
   useEffect(() => {
     const startCamera = async () => {
       try {
@@ -257,7 +280,7 @@ const Camera = ({
           startRendering();
 
           // Pass video element to parent component
-          onCameraReady(videoRef.current);
+          onCameraReady(videoRef.current, triggerFlash);
         };
       } catch (err) {
         console.error("Erro ao acessar a câmera:", err);
@@ -274,7 +297,7 @@ const Camera = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [onCameraReady, startRendering]);
+  }, [onCameraReady, startRendering, triggerFlash]);
 
   // Update rendering when filter or mirror settings change
   useEffect(() => {
@@ -325,6 +348,16 @@ const Camera = ({
         animate={{ opacity: [1, 0.4, 1] }}
         transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
       />
+      <AnimatePresence>
+        {showFlash && (
+          <FlashOverlay
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          />
+        )}
+      </AnimatePresence>
     </CameraWrapper>
   );
 };
