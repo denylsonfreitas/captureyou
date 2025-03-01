@@ -1,4 +1,3 @@
-// CameraPage.jsx
 import React, { useRef, useState, useEffect, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
