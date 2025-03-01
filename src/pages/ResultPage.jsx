@@ -6,46 +6,21 @@ import {
   FaArrowLeft,
   FaMagic,
   FaPalette,
-  FaMoon,
-  FaSun,
   FaShare,
   FaFont,
   FaEdit,
 } from "react-icons/fa";
-import Button from "../components/UI/Button";
 import { motion } from "framer-motion";
+import Button from "../components/UI/Button";
+import ThemeToggle from "../components/UI/ThemeToggle";
+import BackButton from "../components/UI/BackButton";
+import BackgroundGradients from "../components/UI/BackgroundGradients";
 
 const PageContainer = styled.div`
   min-height: 100vh;
   background: ${({ theme }) => theme.colors.background};
   position: relative;
   overflow: hidden;
-`;
-
-const BackgroundGradient = styled.div`
-  position: absolute;
-  top: -30%;
-  right: -10%;
-  width: 70vw;
-  height: 70vw;
-  border-radius: 50%;
-  background: ${({ theme }) => theme.colors.gradientSecondary};
-  opacity: 0.03;
-  filter: blur(120px);
-  z-index: 0;
-`;
-
-const BackgroundGradient2 = styled.div`
-  position: absolute;
-  bottom: -30%;
-  left: -10%;
-  width: 60vw;
-  height: 60vw;
-  border-radius: 50%;
-  background: ${({ theme }) => theme.colors.gradientAccent};
-  opacity: 0.03;
-  filter: blur(120px);
-  z-index: 0;
 `;
 
 const MainContent = styled.main`
@@ -102,30 +77,33 @@ const PhotoGrid = styled.div`
 `;
 
 const MessageContainer = styled.div`
-  width: 100%;
+  width: 220px;
+  max-width: 90%;
   margin-top: 2vh;
-  padding: 1.5vh;
+  padding: 1.8vh 2vh;
   text-align: center;
-  font-size: 1rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: ${({ theme, textColor }) => textColor || theme.colors.text};
   overflow: hidden;
-  word-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+  overflow-wrap: break-word;
+  hyphens: auto;
   background-color: ${({ theme, border }) =>
     border.startsWith("#")
-      ? "rgba(255, 255, 255, 0.15)"
-      : "rgba(0, 0, 0, 0.25)"};
+      ? "rgba(255, 255, 255, 0.2)"
+      : "rgba(0, 0, 0, 0.35)"};
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   border-radius: ${({ theme }) => theme.radii.medium};
   box-shadow: ${({ theme }) => theme.shadows.subtle};
-  max-width: 95%;
   margin-left: auto;
   margin-right: auto;
   min-height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
+  align-self: center;
+  box-sizing: border-box;
 `;
 
 const Photo = styled(motion.img)`
@@ -251,72 +229,6 @@ const ActionButton = styled(Button)`
   border-radius: ${({ theme }) => theme.radii.medium};
 `;
 
-const ThemeToggle = styled.div`
-  position: absolute;
-  top: 24px;
-  right: 24px;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  z-index: 1500;
-  box-shadow: ${({ theme }) => theme.shadows.elevated};
-  background: ${({ theme }) => `${theme.colors.cardBackground}CC`};
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: scale(1.05);
-    box-shadow: ${({ theme }) => theme.shadows.button};
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
-
-  svg {
-    color: ${({ theme }) => theme.colors.text};
-    font-size: 20px;
-  }
-`;
-
-const BackButton = styled.div`
-  position: absolute;
-  top: 24px;
-  left: 24px;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  z-index: 1500;
-  box-shadow: ${({ theme }) => theme.shadows.elevated};
-  background: ${({ theme }) => `${theme.colors.cardBackground}CC`};
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: scale(1.05);
-    box-shadow: ${({ theme }) => theme.shadows.button};
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
-
-  svg {
-    color: ${({ theme }) => theme.colors.text};
-    font-size: 20px;
-  }
-`;
-
 const Divider = styled.div`
   width: 100%;
   height: 1px;
@@ -335,14 +247,33 @@ const TextInput = styled.textarea`
   font-size: 1rem;
   resize: vertical;
   min-height: 80px;
-  margin-bottom: 1.5vh;
+  margin-bottom: 0.5vh;
   transition: ${({ theme }) => theme.transitions.fast};
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  box-sizing: border-box;
 
   &:focus {
     outline: none;
     border-color: ${({ theme }) => theme.colors.primary};
     box-shadow: 0 0 0 2px ${({ theme }) => theme.colors.primary}30;
   }
+`;
+
+const InputHint = styled.div`
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.colors.textSecondary};
+  margin-top: 0.5vh;
+  margin-bottom: 0.5vh;
+`;
+
+const CharCounter = styled.div`
+  text-align: right;
+  font-size: 0.8rem;
+  color: ${({ theme, isNearLimit }) =>
+    isNearLimit ? theme.colors.warning : theme.colors.textSecondary};
+  margin-bottom: 1.5vh;
 `;
 
 const ColorPickerRow = styled.div`
@@ -391,18 +322,12 @@ const imageBorders = [
 ];
 
 const colors = [
-  "#F8F9FE", // Primary
-  "#00D2D3", // Secondary
-  "#FD79A8", // Accent
-  "#FDCB6E", // Warning
-  "#00B894", // Success
-  "#2D3436", // Dark
-  "#6C5CE7", // Purple1
-  "#74B9FF", // Info
-  "#A29BFE", // Purple2
-  "#55EFC4", // Mint
-  "#FF79C6", // Pink
-  "#FFFFFF", // White
+  "#F8F9FE",
+  "#00D2D3",
+  "#FD79A8",
+  "#FDCB6E",
+  "#00B894",
+  "#2D3436",
 ];
 
 const ResultPage = ({ toggleTheme, isDarkTheme }) => {
@@ -413,19 +338,28 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
   const [message, setMessage] = useState("");
   const [textColor, setTextColor] = useState("#2D3436");
 
+  const MAX_MESSAGE_LENGTH = 20;
+
   const textColors = [
-    "#2D3436", // Dark
-    "#F8F9FE", // Light
-    "#6C5CE7", // Primary
-    "#00D2D3", // Secondary
-    "#FD79A8", // Accent
-    "#FDCB6E", // Warning
+    "#2D3436",
+    "#F8F9FE",
+    "#6C5CE7",
+    "#00D2D3",
+    "#FD79A8",
+    "#FDCB6E",
   ];
 
   useEffect(() => {
     const savedPhotos = JSON.parse(localStorage.getItem("photos")) || [];
     setPhotos(savedPhotos);
   }, []);
+
+  const handleMessageChange = (e) => {
+    const text = e.target.value;
+    if (text.length <= MAX_MESSAGE_LENGTH) {
+      setMessage(text);
+    }
+  };
 
   const handleDownload = async () => {
     setIsLoading(true);
@@ -435,14 +369,72 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
       const context = canvas.getContext("2d");
       const padding = 20;
       const photoWidth = 250;
-      const photoHeight = 150; // Altura menor para tornar as fotos retangulares
+      const photoHeight = 150;
       const gap = 20;
       const borderRadius = 10;
-      const messageHeight = message ? 120 : 0; // Aumentado para acomodar o texto mais abaixo
-      const messageMarginTop = 20; // Margem superior para o texto, similar ao preview
+
+      let messageHeight = 0;
+      let messageLines = [];
+
+      if (message) {
+        context.font = "bold 20px Inter, Arial, sans-serif";
+        const maxWidth = photoWidth - 60;
+        const lineHeight = 25;
+        const messageBoxPadding = 25;
+
+        const words = message.split(" ");
+        let line = "";
+
+        const processedWords = [];
+        words.forEach((word) => {
+          const wordMetrics = context.measureText(word);
+          if (wordMetrics.width > maxWidth * 0.8) {
+            let currentPart = "";
+            for (let i = 0; i < word.length; i++) {
+              const testPart = currentPart + word[i];
+              const testMetrics = context.measureText(testPart);
+              if (
+                testMetrics.width > maxWidth * 0.8 &&
+                currentPart.length > 0
+              ) {
+                processedWords.push(currentPart);
+                currentPart = word[i];
+              } else {
+                currentPart = testPart;
+              }
+            }
+            if (currentPart.length > 0) {
+              processedWords.push(currentPart);
+            }
+          } else {
+            processedWords.push(word);
+          }
+        });
+
+        for (let i = 0; i < processedWords.length; i++) {
+          const testLine = line + processedWords[i] + " ";
+          const metrics = context.measureText(testLine);
+          const testWidth = metrics.width;
+
+          if (testWidth > maxWidth && i > 0) {
+            messageLines.push(line);
+            line = processedWords[i] + " ";
+          } else {
+            line = testLine;
+          }
+        }
+
+        if (line) {
+          messageLines.push(line);
+        }
+
+        messageHeight =
+          messageLines.length * lineHeight + messageBoxPadding * 2 + 30;
+      }
 
       canvas.width = photoWidth + 2 * padding;
-      canvas.height = 4 * photoHeight + 3 * gap + 2 * padding + messageHeight;
+      canvas.height =
+        4 * photoHeight + 3 * gap + 2 * padding + messageHeight + 40;
 
       const isColor = border.startsWith("#");
 
@@ -458,7 +450,6 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
         context.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
       }
 
-      // Desenhar as fotos
       for (let i = 0; i < photos.length; i++) {
         const img = new Image();
         img.src = photos[i];
@@ -468,7 +459,6 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
 
         const y = padding + i * (photoHeight + gap);
 
-        // Criar um caminho arredondado para a foto
         context.save();
         context.beginPath();
         context.moveTo(padding + borderRadius, y);
@@ -498,18 +488,15 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
         context.closePath();
         context.clip();
 
-        // Desenhar a imagem mantendo a proporção e centralizando
         const imgRatio = img.width / img.height;
         let drawWidth, drawHeight, offsetX, offsetY;
 
         if (imgRatio > photoWidth / photoHeight) {
-          // Imagem mais larga que o espaço disponível
           drawHeight = photoHeight;
           drawWidth = drawHeight * imgRatio;
           offsetX = padding - (drawWidth - photoWidth) / 2;
           offsetY = y;
         } else {
-          // Imagem mais alta que o espaço disponível
           drawWidth = photoWidth;
           drawHeight = drawWidth / imgRatio;
           offsetX = padding;
@@ -520,71 +507,121 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
         context.restore();
       }
 
-      // Adicionar mensagem personalizada
       if (message) {
-        // Posicionar o texto logo após a última foto, como no preview
         const lastPhotoBottom =
           padding + (photos.length - 1) * (photoHeight + gap) + photoHeight;
-        const messageY = lastPhotoBottom + messageMarginTop + 40; // Aumentado de 20 para 40 para posicionar o texto mais abaixo
-        const messageBoxPadding = 15;
-        const lineHeight = 24;
+        const messageY = lastPhotoBottom + 30;
 
-        // Quebrar texto em linhas se necessário
-        const maxWidth = photoWidth - 20;
+        const messageBoxPaddingVertical = 1.8 * 16;
+        const messageBoxPaddingHorizontal = 2 * 16;
+        const lineHeight = 25;
+        const messageWidth = 220;
+        const borderRadius = 10;
+        const maxTextWidth = messageWidth - messageBoxPaddingHorizontal * 2;
+
+        context.font = "600 19.2px Inter, Arial, sans-serif";
+
         const words = message.split(" ");
         let line = "";
-        let lines = [];
-
-        context.font = "bold 16px Inter, Arial, sans-serif";
+        let messageLines = [];
 
         for (let i = 0; i < words.length; i++) {
-          const testLine = line + words[i] + " ";
-          const metrics = context.measureText(testLine);
-          const testWidth = metrics.width;
+          const word = words[i];
+          const wordWidth = context.measureText(word).width;
 
-          if (testWidth > maxWidth && i > 0) {
-            lines.push(line);
-            line = words[i] + " ";
+          if (wordWidth > maxTextWidth) {
+            if (line.length > 0) {
+              messageLines.push(line);
+              line = "";
+            }
+
+            let currentPart = "";
+            for (let j = 0; j < word.length; j++) {
+              const char = word[j];
+              const testPart = currentPart + char;
+              const testWidth = context.measureText(testPart).width;
+
+              if (testWidth > maxTextWidth && currentPart.length > 0) {
+                messageLines.push(currentPart);
+                currentPart = char;
+              } else {
+                currentPart = testPart;
+              }
+            }
+
+            if (currentPart.length > 0) {
+              line = currentPart + " ";
+            }
           } else {
-            line = testLine;
+            const testLine = line + word + " ";
+            const testWidth = context.measureText(testLine).width;
+
+            if (testWidth > maxTextWidth && line.length > 0) {
+              messageLines.push(line);
+              line = word + " ";
+            } else {
+              line = testLine;
+            }
           }
         }
-        lines.push(line);
 
-        // Calcular altura total do texto
-        const totalTextHeight = lines.length * lineHeight;
+        if (line.trim().length > 0) {
+          messageLines.push(line);
+        }
 
-        // Desenhar fundo semi-transparente para o texto (similar ao preview)
+        const totalTextHeight = messageLines.length * lineHeight;
+
+        const messageBoxWidth = messageWidth;
+
+        const messageBoxHeight = Math.max(
+          40,
+          totalTextHeight + messageBoxPaddingVertical * 2
+        );
+
+        const messageBoxX = padding + (photoWidth - messageBoxWidth) / 2;
+        const messageBoxY = messageY;
+
         context.fillStyle = isColor
-          ? "rgba(255, 255, 255, 0.15)"
-          : "rgba(0, 0, 0, 0.25)";
-        context.beginPath();
+          ? "rgba(255, 255, 255, 0.2)"
+          : "rgba(0, 0, 0, 0.35)";
 
-        // Criar um retângulo arredondado para o fundo do texto
-        const messageBoxWidth = photoWidth * 0.95; // 95% da largura da foto, como no preview
+        context.shadowColor = isColor
+          ? "rgba(255, 255, 255, 0.1)"
+          : "rgba(0, 0, 0, 0.1)";
+        context.shadowBlur = 4;
+        context.shadowOffsetX = 0;
+        context.shadowOffsetY = 0;
+
+        context.beginPath();
         context.roundRect(
-          padding + (photoWidth - messageBoxWidth) / 2, // Centralizar horizontalmente
-          messageY - messageBoxPadding,
+          messageBoxX,
+          messageBoxY,
           messageBoxWidth,
-          totalTextHeight + messageBoxPadding * 2,
-          8
+          messageBoxHeight,
+          borderRadius
         );
         context.fill();
+        context.shadowBlur = 0;
 
-        // Desenhar linhas de texto
         context.fillStyle = textColor;
         context.textAlign = "center";
+        context.textBaseline = "middle";
 
-        lines.forEach((line, index) => {
+        const messageBoxCenterY = messageBoxY + messageBoxHeight / 2;
+
+        const totalLinesHeight = messageLines.length * lineHeight;
+        const firstLineY =
+          messageBoxCenterY - totalLinesHeight / 2 + lineHeight / 2;
+
+        messageLines.forEach((line, index) => {
           context.fillText(
             line.trim(),
-            canvas.width / 2,
-            messageY + index * lineHeight
+            messageBoxX + messageBoxWidth / 2,
+            firstLineY + index * lineHeight
           );
         });
       }
 
-      // Criar um link para download
       const link = document.createElement("a");
       link.download = "captureyou-photos.png";
       link.href = canvas.toDataURL("image/png");
@@ -598,24 +635,16 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
 
   return (
     <PageContainer>
-      <BackgroundGradient />
-      <BackgroundGradient2 />
+      <BackgroundGradients
+        primary={{ background: (theme) => theme.colors.gradientSecondary }}
+        secondary={{ background: (theme) => theme.colors.gradientAccent }}
+      />
 
-      <ThemeToggle
-        onClick={toggleTheme}
-        aria-label={
-          isDarkTheme ? "Mudar para modo claro" : "Mudar para modo escuro"
-        }
-      >
-        {isDarkTheme ? <FaSun /> : <FaMoon />}
-      </ThemeToggle>
-
+      <ThemeToggle toggleTheme={toggleTheme} isDarkTheme={isDarkTheme} />
       <BackButton
         onClick={() => navigate("/camera")}
-        aria-label="Voltar para a câmera"
-      >
-        <FaArrowLeft />
-      </BackButton>
+        ariaLabel="Voltar para a câmera"
+      />
 
       <MainContent>
         <PreviewSection
@@ -698,9 +727,19 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
             <TextInput
               placeholder="Digite sua mensagem personalizada aqui..."
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              maxLength={100}
+              onChange={handleMessageChange}
+              maxLength={MAX_MESSAGE_LENGTH}
             />
+
+            <InputHint>
+              {message.length > 0
+                ? "As quebras de linha são aplicadas automaticamente."
+                : "Adicione uma mensagem para tornar sua foto mais personalizada."}
+            </InputHint>
+
+            <CharCounter isNearLimit={message.length >= MAX_MESSAGE_LENGTH}>
+              {message.length} / {MAX_MESSAGE_LENGTH}
+            </CharCounter>
 
             <PanelTitle style={{ fontSize: "0.9rem", marginBottom: "0.5rem" }}>
               <FaEdit /> Cor do texto

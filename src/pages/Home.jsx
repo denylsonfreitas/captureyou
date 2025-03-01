@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Button from "../components/UI/Button";
 import { motion } from "framer-motion";
-import { FaCamera, FaMoon, FaSun } from "react-icons/fa";
+import { FaCamera } from "react-icons/fa";
+import ThemeToggle from "../components/UI/ThemeToggle";
+import BackgroundGradients from "../components/UI/BackgroundGradients";
 
 const HomeContainer = styled(motion.div)`
   display: flex;
@@ -17,32 +19,6 @@ const HomeContainer = styled(motion.div)`
   padding-top: 100px;
   overflow: hidden;
   position: relative;
-`;
-
-const BackgroundGradient = styled.div`
-  position: absolute;
-  top: -50%;
-  right: -20%;
-  width: 80vw;
-  height: 80vw;
-  border-radius: 50%;
-  background: ${({ theme }) => theme.colors.gradientPrimary};
-  opacity: 0.05;
-  filter: blur(120px);
-  z-index: 0;
-`;
-
-const BackgroundGradient2 = styled.div`
-  position: absolute;
-  bottom: -30%;
-  left: -10%;
-  width: 60vw;
-  height: 60vw;
-  border-radius: 50%;
-  background: ${({ theme }) => theme.colors.gradientSecondary};
-  opacity: 0.05;
-  filter: blur(120px);
-  z-index: 0;
 `;
 
 const ContentWrapper = styled(motion.div)`
@@ -81,39 +57,6 @@ const ActionButton = styled(Button)`
   font-weight: 600;
 `;
 
-const ThemeToggle = styled.div`
-  position: fixed;
-  top: 24px;
-  right: 24px;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  z-index: 1500;
-  box-shadow: ${({ theme }) => theme.shadows.elevated};
-  background: ${({ theme }) => `${theme.colors.cardBackground}CC`};
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: scale(1.05);
-    box-shadow: ${({ theme }) => theme.shadows.button};
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
-
-  svg {
-    color: ${({ theme }) => theme.colors.text};
-    font-size: 20px;
-  }
-`;
-
 const Home = ({ toggleTheme, isDarkTheme }) => {
   const navigate = useNavigate();
 
@@ -141,22 +84,28 @@ const Home = ({ toggleTheme, isDarkTheme }) => {
 
   return (
     <>
-      <ThemeToggle
-        onClick={toggleTheme}
-        aria-label={
-          isDarkTheme ? "Mudar para modo claro" : "Mudar para modo escuro"
-        }
-      >
-        {isDarkTheme ? <FaSun /> : <FaMoon />}
-      </ThemeToggle>
+      <ThemeToggle toggleTheme={toggleTheme} isDarkTheme={isDarkTheme} />
 
       <HomeContainer
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        <BackgroundGradient />
-        <BackgroundGradient2 />
+        <BackgroundGradients
+          primary={{
+            top: "-50%",
+            right: "-20%",
+            width: "80vw",
+            height: "80vw",
+          }}
+          secondary={{
+            bottom: "-30%",
+            left: "-10%",
+            width: "60vw",
+            height: "60vw",
+            background: (theme) => theme.colors.gradientSecondary,
+          }}
+        />
 
         <ContentWrapper>
           <Title variants={itemVariants}>CaptureYou</Title>

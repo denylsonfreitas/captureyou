@@ -3,82 +3,12 @@ import React, { useRef, useState, useEffect, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import {
-  FaCamera,
-  FaRedo,
-  FaCheck,
-  FaMoon,
-  FaSun,
-  FaArrowLeft,
-} from "react-icons/fa";
+import { FaCamera, FaRedo, FaCheck } from "react-icons/fa";
 import Camera from "../components/Camera/Camera";
 import Button from "../components/UI/Button";
-
-const ThemeToggle = styled.div`
-  position: fixed;
-  top: 24px;
-  right: 24px;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  z-index: 1500;
-  box-shadow: ${({ theme }) => theme.shadows.elevated};
-  background: ${({ theme }) => `${theme.colors.cardBackground}CC`};
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: scale(1.05);
-    box-shadow: ${({ theme }) => theme.shadows.button};
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
-
-  svg {
-    color: ${({ theme }) => theme.colors.text};
-    font-size: 20px;
-  }
-`;
-
-const BackButton = styled.div`
-  position: fixed;
-  top: 24px;
-  left: 24px;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  z-index: 1500;
-  box-shadow: ${({ theme }) => theme.shadows.elevated};
-  background: ${({ theme }) => `${theme.colors.cardBackground}CC`};
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: scale(1.05);
-    box-shadow: ${({ theme }) => theme.shadows.button};
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
-
-  svg {
-    color: ${({ theme }) => theme.colors.text};
-    font-size: 20px;
-  }
-`;
+import ThemeToggle from "../components/UI/ThemeToggle";
+import BackButton from "../components/UI/BackButton";
+import BackgroundGradients from "../components/UI/BackgroundGradients";
 
 const CameraContainer = styled.div`
   display: flex;
@@ -89,19 +19,6 @@ const CameraContainer = styled.div`
   min-height: 100vh;
   position: relative;
   overflow: hidden;
-`;
-
-const BackgroundGradient = styled.div`
-  position: absolute;
-  top: -30%;
-  right: -10%;
-  width: 70vw;
-  height: 70vw;
-  border-radius: 50%;
-  background: ${({ theme }) => theme.colors.gradientPrimary};
-  opacity: 0.03;
-  filter: blur(120px);
-  z-index: 0;
 `;
 
 const CameraSection = styled.div`
@@ -301,24 +218,14 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
 
   return (
     <>
-      <ThemeToggle
-        onClick={toggleTheme}
-        aria-label={
-          isDarkTheme ? "Mudar para modo claro" : "Mudar para modo escuro"
-        }
-      >
-        {isDarkTheme ? <FaSun /> : <FaMoon />}
-      </ThemeToggle>
-
+      <ThemeToggle toggleTheme={toggleTheme} isDarkTheme={isDarkTheme} />
       <BackButton
         onClick={() => navigate("/")}
-        aria-label="Voltar para a página inicial"
-      >
-        <FaArrowLeft />
-      </BackButton>
+        ariaLabel="Voltar para a página inicial"
+      />
 
       <CameraContainer>
-        <BackgroundGradient />
+        <BackgroundGradients />
 
         <CameraSection>
           <ContentWrapper>
