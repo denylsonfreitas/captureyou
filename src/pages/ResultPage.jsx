@@ -9,6 +9,7 @@ import {
   FaShare,
   FaFont,
   FaEdit,
+  FaPlus,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import Button from "../components/UI/Button";
@@ -48,8 +49,8 @@ const PreviewSection = styled(motion.section)`
 
 const PhotoPreview = styled(motion.div)`
   overflow: hidden;
-  background: ${({ border }) =>
-    border.startsWith("#") ? border : `url(${border})`};
+  background: ${({ $border }) =>
+    $border.startsWith("#") ? $border : `url(${$border})`};
   background-size: cover;
   padding: 2vh;
   border-radius: ${({ theme }) => theme.radii.large};
@@ -84,14 +85,14 @@ const MessageContainer = styled.div`
   text-align: center;
   font-size: 1.2rem;
   font-weight: 600;
-  color: ${({ theme, textColor }) => textColor || theme.colors.text};
+  color: ${({ theme, $textColor }) => $textColor || theme.colors.text};
   overflow: hidden;
   word-break: break-word;
   white-space: normal;
   overflow-wrap: break-word;
   hyphens: auto;
-  background-color: ${({ theme, border }) =>
-    border.startsWith("#")
+  background-color: ${({ theme, $border }) =>
+    $border.startsWith("#")
       ? "rgba(255, 255, 255, 0.2)"
       : "rgba(0, 0, 0, 0.35)"};
   backdrop-filter: blur(4px);
@@ -176,9 +177,9 @@ const ColorOption = styled(motion.button)`
   aspect-ratio: 1;
   border-radius: ${({ theme }) => theme.radii.medium};
   border: 2px solid
-    ${({ selected, theme }) =>
-      selected ? theme.colors.primary : "transparent"};
-  background: ${({ color }) => color};
+    ${({ $selected, theme }) =>
+      $selected ? theme.colors.primary : "transparent"};
+  background: ${({ $color }) => $color};
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -201,12 +202,12 @@ const BorderOption = styled(motion.div)`
   width: 100%;
   aspect-ratio: 1;
   border-radius: ${({ theme }) => theme.radii.medium};
-  background-image: ${({ image }) => `url(${image})`};
+  background-image: ${({ $image }) => `url(${$image})`};
   background-size: cover;
   background-position: center;
   border: 2px solid
-    ${({ selected, theme }) =>
-      selected ? theme.colors.primary : "transparent"};
+    ${({ $selected, theme }) =>
+      $selected ? theme.colors.primary : "transparent"};
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -271,8 +272,8 @@ const InputHint = styled.div`
 const CharCounter = styled.div`
   text-align: right;
   font-size: 0.8rem;
-  color: ${({ theme, isNearLimit }) =>
-    isNearLimit ? theme.colors.warning : theme.colors.textSecondary};
+  color: ${({ theme, $isNearLimit }) =>
+    $isNearLimit ? theme.colors.warning : theme.colors.textSecondary};
   margin-bottom: 1.5vh;
 `;
 
@@ -286,12 +287,65 @@ const TextColorOption = styled(motion.button)`
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: ${({ color }) => color};
+  background: ${({ $color }) => $color};
   border: 2px solid
-    ${({ selected, theme }) =>
-      selected ? theme.colors.primary : "transparent"};
+    ${({ $selected, theme }) =>
+      $selected ? theme.colors.primary : "transparent"};
   cursor: pointer;
   transition: all 0.2s ease;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+`;
+
+const CustomColorButton = styled(motion.button)`
+  width: 32px;
+  height: 32px;
+  border-radius: 100%;
+  background: ${({ theme }) => theme.colors.cardBackground};
+  border: 2px dashed ${({ theme }) => theme.colors.border};
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${({ theme }) => theme.colors.text};
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: visible;
+
+  &:hover {
+    transform: scale(1.1);
+    border-color: ${({ theme }) => theme.colors.primary};
+  }
+`;
+
+const ColorPickerContainer = styled.div`
+  position: relative;
+  display: inline-block;
+`;
+
+const HiddenColorInput = styled.input`
+  opacity: 0;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  cursor: pointer;
+`;
+
+const CustomColorPreview = styled.div`
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: ${({ $color }) => $color};
+  border: 2px solid
+    ${({ $selected, theme }) =>
+      $selected ? theme.colors.primary : "transparent"};
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
 
   &:hover {
     transform: scale(1.1);
@@ -323,11 +377,11 @@ const imageBorders = [
 
 const colors = [
   "#F8F9FE",
-  "#00D2D3",
+  "#2D3436",
+  "#0077b6",
   "#FD79A8",
   "#FDCB6E",
   "#00B894",
-  "#2D3436",
 ];
 
 const ResultPage = ({ toggleTheme, isDarkTheme }) => {
@@ -337,21 +391,42 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [textColor, setTextColor] = useState("#2D3436");
+  const [storageError, setStorageError] = useState(false);
+  const [customBgColor, setCustomBgColor] = useState("#8A2BE2");
+  const [customTextColor, setCustomTextColor] = useState("#FF6347");
+  const [isUsingCustomBg, setIsUsingCustomBg] = useState(false);
+  const [isUsingCustomText, setIsUsingCustomText] = useState(false);
 
   const MAX_MESSAGE_LENGTH = 20;
 
   const textColors = [
-    "#2D3436",
     "#F8F9FE",
-    "#6C5CE7",
-    "#00D2D3",
+    "#2D3436",
+    "#0077b6",
     "#FD79A8",
     "#FDCB6E",
+    "#00B894",
   ];
 
   useEffect(() => {
-    const savedPhotos = JSON.parse(localStorage.getItem("photos")) || [];
-    setPhotos(savedPhotos);
+    try {
+      const savedPhotos = JSON.parse(localStorage.getItem("photos")) || [];
+
+      if (savedPhotos.length === 0) {
+        setStorageError(true);
+        console.warn("Nenhuma foto encontrada no armazenamento local");
+      } else if (savedPhotos.length < 4) {
+        // Se tiver menos de 4 fotos, pode ser devido a problemas de armazenamento
+        console.warn(`Apenas ${savedPhotos.length} fotos foram recuperadas`);
+        setStorageError(true);
+      }
+
+      setPhotos(savedPhotos);
+    } catch (error) {
+      console.error("Erro ao carregar fotos do localStorage:", error);
+      setStorageError(true);
+      setPhotos([]);
+    }
   }, []);
 
   const handleMessageChange = (e) => {
@@ -633,6 +708,20 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
     }
   };
 
+  const handleCustomBgColorChange = (e) => {
+    const newColor = e.target.value;
+    setCustomBgColor(newColor);
+    setBorder(newColor);
+    setIsUsingCustomBg(true);
+  };
+
+  const handleCustomTextColorChange = (e) => {
+    const newColor = e.target.value;
+    setCustomTextColor(newColor);
+    setTextColor(newColor);
+    setIsUsingCustomText(true);
+  };
+
   return (
     <PageContainer>
       <BackgroundGradients
@@ -652,9 +741,38 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
+          {storageError && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              style={{
+                padding: "12px 16px",
+                background: "rgba(255, 87, 87, 0.9)",
+                color: "white",
+                borderRadius: "8px",
+                marginBottom: "16px",
+                maxWidth: "350px",
+                textAlign: "center",
+              }}
+            >
+              {photos.length === 0 ? (
+                "Nenhuma foto encontrada. Por favor, volte e capture novas fotos."
+              ) : photos.length < 4 ? (
+                <>
+                  Apenas {photos.length}{" "}
+                  {photos.length === 1 ? "foto foi" : "fotos foram"} carregadas
+                  devido a limitações de armazenamento. Recomendamos baixar suas
+                  fotos agora.
+                </>
+              ) : (
+                "Suas fotos são muito grandes para armazenamento local. Recomendamos baixar suas fotos agora."
+              )}
+            </motion.div>
+          )}
+
           <PhotoPreview
-            border={border}
-            whileHover={{ scale: 1.02 }}
+            $border={border}
+            $whileHover={{ scale: 1.02 }}
             transition={{ duration: 0.3 }}
           >
             <PhotoGrid>
@@ -663,14 +781,14 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
                   key={index}
                   src={photo}
                   alt={`Foto ${index + 1}`}
-                  whileHover={{ scale: 1.05 }}
+                  $whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.2 }}
                 />
               ))}
             </PhotoGrid>
 
             {message && (
-              <MessageContainer textColor={textColor} border={border}>
+              <MessageContainer $textColor={textColor} $border={border}>
                 {message}
               </MessageContainer>
             )}
@@ -694,13 +812,39 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
               {colors.map((color) => (
                 <ColorOption
                   key={color}
-                  color={color}
-                  selected={border === color}
-                  onClick={() => setBorder(color)}
-                  whileHover={{ scale: 1.1 }}
+                  $color={color}
+                  $selected={border === color && !isUsingCustomBg}
+                  onClick={() => {
+                    setBorder(color);
+                    setIsUsingCustomBg(false);
+                  }}
+                  $whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                 />
               ))}
+              <ColorPickerContainer>
+                {isUsingCustomBg ? (
+                  <CustomColorPreview
+                    $color={customBgColor}
+                    $selected={true}
+                    $whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  />
+                ) : (
+                  <CustomColorButton
+                    $whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <FaPlus size={14} />
+                  </CustomColorButton>
+                )}
+                <HiddenColorInput
+                  type="color"
+                  value={customBgColor}
+                  onChange={handleCustomBgColorChange}
+                  title="Escolher cor personalizada"
+                />
+              </ColorPickerContainer>
             </ColorGrid>
 
             <PanelTitle>
@@ -710,10 +854,13 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
               {imageBorders.map((item) => (
                 <BorderOption
                   key={item.name}
-                  image={item.thumbnail}
-                  selected={border === item.value}
-                  onClick={() => setBorder(item.value)}
-                  whileHover={{ scale: 1.05 }}
+                  $image={item.thumbnail}
+                  $selected={border === item.value}
+                  onClick={() => {
+                    setBorder(item.value);
+                    setIsUsingCustomBg(false);
+                  }}
+                  $whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.98 }}
                 />
               ))}
@@ -737,7 +884,7 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
                 : "Adicione uma mensagem para tornar sua foto mais personalizada."}
             </InputHint>
 
-            <CharCounter isNearLimit={message.length >= MAX_MESSAGE_LENGTH}>
+            <CharCounter $isNearLimit={message.length >= MAX_MESSAGE_LENGTH}>
               {message.length} / {MAX_MESSAGE_LENGTH}
             </CharCounter>
 
@@ -748,13 +895,39 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
               {textColors.map((color) => (
                 <TextColorOption
                   key={color}
-                  color={color}
-                  selected={textColor === color}
-                  onClick={() => setTextColor(color)}
-                  whileHover={{ scale: 1.1 }}
+                  $color={color}
+                  $selected={textColor === color && !isUsingCustomText}
+                  onClick={() => {
+                    setTextColor(color);
+                    setIsUsingCustomText(false);
+                  }}
+                  $whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                 />
               ))}
+              <ColorPickerContainer>
+                {isUsingCustomText ? (
+                  <CustomColorPreview
+                    $color={customTextColor}
+                    $selected={true}
+                    $whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  />
+                ) : (
+                  <CustomColorButton
+                    $whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <FaPlus size={14} />
+                  </CustomColorButton>
+                )}
+                <HiddenColorInput
+                  type="color"
+                  value={customTextColor}
+                  onChange={handleCustomTextColorChange}
+                  title="Escolher cor de texto personalizada"
+                />
+              </ColorPickerContainer>
             </ColorPickerRow>
 
             <Divider />
@@ -763,7 +936,7 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
               variant="primary"
               onClick={handleDownload}
               disabled={isLoading}
-              whileHover={{ scale: 1.02, y: -2 }}
+              $whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
             >
               <FaDownload /> {isLoading ? "Processando..." : "Baixar Foto"}
@@ -771,7 +944,7 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
 
             <ActionButton
               variant="secondary"
-              whileHover={{ scale: 1.02, y: -2 }}
+              $whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
             >
               <FaShare /> Compartilhar
@@ -780,7 +953,7 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
             <ActionButton
               variant="glass"
               onClick={() => navigate("/")}
-              whileHover={{ scale: 1.02, y: -2 }}
+              $whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
             >
               <FaArrowLeft /> Voltar ao Início

@@ -20,8 +20,8 @@ const StyledButton = styled(motion.button)`
       : size === "small"
       ? `${theme.spacing.xs} ${theme.spacing.medium}`
       : `${theme.spacing.small} ${theme.spacing.large}`};
-  border-radius: ${({ pill, theme }) =>
-    pill ? theme.radii.full : theme.radii.medium};
+  border-radius: ${({ $pill, theme }) =>
+    $pill ? theme.radii.full : theme.radii.medium};
   font-size: ${({ size }) =>
     size === "large" ? "1.125rem" : size === "small" ? "0.875rem" : "1rem"};
   font-weight: 600;
@@ -114,7 +114,7 @@ const Button = ({
     <StyledButton
       variant={variant}
       size={size}
-      pill={pill}
+      $pill={pill}
       whileTap={{ scale: 0.98 }}
       {...props}
     >
