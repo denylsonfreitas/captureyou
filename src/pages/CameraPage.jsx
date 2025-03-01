@@ -245,7 +245,6 @@ const Countdown = styled(motion.div)`
   margin-right: 16px;
 `;
 
-// Componente memorizado para evitar re-renderizações desnecessárias
 const MemoizedCamera = memo(({ onCameraReady, isMirrored, selectedFilter }) => {
   return (
     <Camera

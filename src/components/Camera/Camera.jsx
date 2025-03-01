@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 
@@ -155,6 +155,83 @@ const Camera = ({
   const streamRef = useRef(null);
   const animationRef = useRef(null);
 
+  const applyFilter = useCallback((context, width, height, filter) => {
+    // Simple filter implementations
+    switch (filter) {
+      case "grayscale":
+        const imageData = context.getImageData(0, 0, width, height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+          data[i] = avg; // red
+          data[i + 1] = avg; // green
+          data[i + 2] = avg; // blue
+        }
+        context.putImageData(imageData, 0, 0);
+        break;
+      case "sepia":
+        const sepiaData = context.getImageData(0, 0, width, height);
+        const sepiaPixels = sepiaData.data;
+        for (let i = 0; i < sepiaPixels.length; i += 4) {
+          const r = sepiaPixels[i];
+          const g = sepiaPixels[i + 1];
+          const b = sepiaPixels[i + 2];
+          sepiaPixels[i] = Math.min(255, r * 0.393 + g * 0.769 + b * 0.189);
+          sepiaPixels[i + 1] = Math.min(255, r * 0.349 + g * 0.686 + b * 0.168);
+          sepiaPixels[i + 2] = Math.min(255, r * 0.272 + g * 0.534 + b * 0.131);
+        }
+        context.putImageData(sepiaData, 0, 0);
+        break;
+      case "vintage":
+        context.globalCompositeOperation = "multiply";
+        context.fillStyle = "rgba(255, 210, 170, 0.3)";
+        context.fillRect(0, 0, width, height);
+        context.globalCompositeOperation = "source-over";
+        break;
+      default:
+        break;
+    }
+  }, []);
+
+  const startRendering = useCallback(() => {
+    const renderFrame = () => {
+      if (!videoRef.current || !canvasRef.current) return;
+
+      const canvas = canvasRef.current;
+      const context = canvas.getContext("2d");
+
+      // Clear canvas
+      context.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw video frame to canvas
+      if (isMirrored) {
+        context.save();
+        context.scale(-1, 1);
+        context.drawImage(
+          videoRef.current,
+          -canvas.width,
+          0,
+          canvas.width,
+          canvas.height
+        );
+        context.restore();
+      } else {
+        context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      }
+
+      // Apply selected filter
+      if (selectedFilter !== "none") {
+        applyFilter(context, canvas.width, canvas.height, selectedFilter);
+      }
+
+      // Request next frame
+      animationRef.current = requestAnimationFrame(renderFrame);
+    };
+
+    // Start the rendering loop
+    renderFrame();
+  }, [isMirrored, selectedFilter, applyFilter]);
+
   useEffect(() => {
     const startCamera = async () => {
       try {
@@ -197,84 +274,7 @@ const Camera = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [onCameraReady]);
-
-  const applyFilter = (context, width, height, filter) => {
-    // Simple filter implementations
-    switch (filter) {
-      case "grayscale":
-        const imageData = context.getImageData(0, 0, width, height);
-        const data = imageData.data;
-        for (let i = 0; i < data.length; i += 4) {
-          const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-          data[i] = avg; // red
-          data[i + 1] = avg; // green
-          data[i + 2] = avg; // blue
-        }
-        context.putImageData(imageData, 0, 0);
-        break;
-      case "sepia":
-        const sepiaData = context.getImageData(0, 0, width, height);
-        const sepiaPixels = sepiaData.data;
-        for (let i = 0; i < sepiaPixels.length; i += 4) {
-          const r = sepiaPixels[i];
-          const g = sepiaPixels[i + 1];
-          const b = sepiaPixels[i + 2];
-          sepiaPixels[i] = Math.min(255, r * 0.393 + g * 0.769 + b * 0.189);
-          sepiaPixels[i + 1] = Math.min(255, r * 0.349 + g * 0.686 + b * 0.168);
-          sepiaPixels[i + 2] = Math.min(255, r * 0.272 + g * 0.534 + b * 0.131);
-        }
-        context.putImageData(sepiaData, 0, 0);
-        break;
-      case "vintage":
-        context.globalCompositeOperation = "multiply";
-        context.fillStyle = "rgba(255, 210, 170, 0.3)";
-        context.fillRect(0, 0, width, height);
-        context.globalCompositeOperation = "source-over";
-        break;
-      default:
-        break;
-    }
-  };
-
-  const startRendering = () => {
-    const renderFrame = () => {
-      if (!videoRef.current || !canvasRef.current) return;
-
-      const canvas = canvasRef.current;
-      const context = canvas.getContext("2d");
-
-      // Clear canvas
-      context.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw video frame to canvas
-      if (isMirrored) {
-        context.save();
-        context.scale(-1, 1);
-        context.drawImage(
-          videoRef.current,
-          -canvas.width,
-          0,
-          canvas.width,
-          canvas.height
-        );
-        context.restore();
-      } else {
-        context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-      }
-
-      // Apply selected filter
-      if (selectedFilter !== "none") {
-        applyFilter(context, canvas.width, canvas.height, selectedFilter);
-      }
-
-      // Request next frame
-      animationRef.current = requestAnimationFrame(renderFrame);
-    };
-
-    // Start the rendering loop
-    renderFrame();
-  };
+  }, [onCameraReady, startRendering]);
 
   // Update rendering when filter or mirror settings change
   useEffect(() => {
@@ -306,7 +306,7 @@ const Camera = ({
         applyFilter(context, canvas.width, canvas.height, selectedFilter);
       }
     }
-  }, [selectedFilter, isMirrored]);
+  }, [selectedFilter, isMirrored, applyFilter]);
 
   return (
     <CameraWrapper
