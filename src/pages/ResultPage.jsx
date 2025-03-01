@@ -13,7 +13,7 @@ import {
   FaEdit,
 } from "react-icons/fa";
 import Button from "../components/UI/Button";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -213,7 +213,7 @@ const ColorOption = styled(motion.button)`
 const BorderGrid = styled.div`
   overflow: hidden;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.5vh;
   margin-bottom: 2.5vh;
 `;
@@ -379,7 +379,7 @@ const imageBorders = [
     thumbnail: "/assets/simple.jpg",
   },
   {
-    name: "Tecnológico",
+    name: "Galáxia",
     value: "/assets/theme1.jpg",
     thumbnail: "/assets/theme1.jpg",
   },
@@ -391,15 +391,15 @@ const imageBorders = [
 ];
 
 const colors = [
-  "#6C5CE7", // Primary
+  "#F8F9FE", // Primary
   "#00D2D3", // Secondary
   "#FD79A8", // Accent
   "#FDCB6E", // Warning
   "#00B894", // Success
   "#2D3436", // Dark
-  "#F8F9FE", // Light
+  "#6C5CE7", // Purple1
   "#74B9FF", // Info
-  "#A29BFE", // Purple
+  "#A29BFE", // Purple2
   "#55EFC4", // Mint
   "#FF79C6", // Pink
   "#FFFFFF", // White
@@ -408,7 +408,7 @@ const colors = [
 const ResultPage = ({ toggleTheme, isDarkTheme }) => {
   const navigate = useNavigate();
   const [photos, setPhotos] = useState([]);
-  const [border, setBorder] = useState("#6C5CE7");
+  const [border, setBorder] = useState("#F8F9FE");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [textColor, setTextColor] = useState("#2D3436");
@@ -434,14 +434,15 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
       const padding = 20;
-      const photoSize = 250;
+      const photoWidth = 250;
+      const photoHeight = 150; // Altura menor para tornar as fotos retangulares
       const gap = 20;
       const borderRadius = 10;
-      const messageHeight = message ? 100 : 0;
+      const messageHeight = message ? 120 : 0; // Aumentado para acomodar o texto mais abaixo
       const messageMarginTop = 20; // Margem superior para o texto, similar ao preview
 
-      canvas.width = photoSize + 2 * padding;
-      canvas.height = 4 * photoSize + 3 * gap + 2 * padding + messageHeight;
+      canvas.width = photoWidth + 2 * padding;
+      canvas.height = 4 * photoHeight + 3 * gap + 2 * padding + messageHeight;
 
       const isColor = border.startsWith("#");
 
@@ -465,39 +466,57 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
           img.onload = resolve;
         });
 
-        const y = padding + i * (photoSize + gap);
+        const y = padding + i * (photoHeight + gap);
 
         // Criar um caminho arredondado para a foto
         context.save();
         context.beginPath();
         context.moveTo(padding + borderRadius, y);
-        context.lineTo(padding + photoSize - borderRadius, y);
+        context.lineTo(padding + photoWidth - borderRadius, y);
         context.quadraticCurveTo(
-          padding + photoSize,
+          padding + photoWidth,
           y,
-          padding + photoSize,
+          padding + photoWidth,
           y + borderRadius
         );
-        context.lineTo(padding + photoSize, y + photoSize - borderRadius);
+        context.lineTo(padding + photoWidth, y + photoHeight - borderRadius);
         context.quadraticCurveTo(
-          padding + photoSize,
-          y + photoSize,
-          padding + photoSize - borderRadius,
-          y + photoSize
+          padding + photoWidth,
+          y + photoHeight,
+          padding + photoWidth - borderRadius,
+          y + photoHeight
         );
-        context.lineTo(padding + borderRadius, y + photoSize);
+        context.lineTo(padding + borderRadius, y + photoHeight);
         context.quadraticCurveTo(
           padding,
-          y + photoSize,
+          y + photoHeight,
           padding,
-          y + photoSize - borderRadius
+          y + photoHeight - borderRadius
         );
         context.lineTo(padding, y + borderRadius);
         context.quadraticCurveTo(padding, y, padding + borderRadius, y);
         context.closePath();
         context.clip();
 
-        context.drawImage(img, padding, y, photoSize, photoSize);
+        // Desenhar a imagem mantendo a proporção e centralizando
+        const imgRatio = img.width / img.height;
+        let drawWidth, drawHeight, offsetX, offsetY;
+
+        if (imgRatio > photoWidth / photoHeight) {
+          // Imagem mais larga que o espaço disponível
+          drawHeight = photoHeight;
+          drawWidth = drawHeight * imgRatio;
+          offsetX = padding - (drawWidth - photoWidth) / 2;
+          offsetY = y;
+        } else {
+          // Imagem mais alta que o espaço disponível
+          drawWidth = photoWidth;
+          drawHeight = drawWidth / imgRatio;
+          offsetX = padding;
+          offsetY = y + (photoHeight - drawHeight) / 2;
+        }
+
+        context.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
         context.restore();
       }
 
@@ -505,13 +524,13 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
       if (message) {
         // Posicionar o texto logo após a última foto, como no preview
         const lastPhotoBottom =
-          padding + (photos.length - 1) * (photoSize + gap) + photoSize;
-        const messageY = lastPhotoBottom + messageMarginTop + 20;
+          padding + (photos.length - 1) * (photoHeight + gap) + photoHeight;
+        const messageY = lastPhotoBottom + messageMarginTop + 40; // Aumentado de 20 para 40 para posicionar o texto mais abaixo
         const messageBoxPadding = 15;
         const lineHeight = 24;
 
         // Quebrar texto em linhas se necessário
-        const maxWidth = photoSize - 20;
+        const maxWidth = photoWidth - 20;
         const words = message.split(" ");
         let line = "";
         let lines = [];
@@ -542,9 +561,9 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
         context.beginPath();
 
         // Criar um retângulo arredondado para o fundo do texto
-        const messageBoxWidth = photoSize * 0.95; // 95% da largura da foto, como no preview
+        const messageBoxWidth = photoWidth * 0.95; // 95% da largura da foto, como no preview
         context.roundRect(
-          padding + (photoSize - messageBoxWidth) / 2, // Centralizar horizontalmente
+          padding + (photoWidth - messageBoxWidth) / 2, // Centralizar horizontalmente
           messageY - messageBoxPadding,
           messageBoxWidth,
           totalTextHeight + messageBoxPadding * 2,

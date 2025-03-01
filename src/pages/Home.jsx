@@ -114,54 +114,6 @@ const ThemeToggle = styled.div`
   }
 `;
 
-const FeatureGrid = styled(motion.div)`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
-  width: 100%;
-  margin-top: 4rem;
-`;
-
-const FeatureCard = styled(motion.div)`
-  background: ${({ theme }) => theme.colors.cardBackground};
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: ${({ theme }) => theme.radii.large};
-  padding: 2rem;
-  box-shadow: ${({ theme }) => theme.shadows.card};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-`;
-
-const FeatureIcon = styled.div`
-  width: 64px;
-  height: 64px;
-  border-radius: ${({ theme }) => theme.radii.full};
-  background: ${({ theme, color }) => color || theme.colors.gradientPrimary};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1.5rem;
-  font-size: 1.75rem;
-  color: white;
-`;
-
-const FeatureTitle = styled.h3`
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-  color: ${({ theme }) => theme.colors.text};
-`;
-
-const FeatureDescription = styled.p`
-  font-size: 1rem;
-  color: ${({ theme }) => theme.colors.textSecondary};
-  line-height: 1.5;
-`;
-
 const Home = ({ toggleTheme, isDarkTheme }) => {
   const navigate = useNavigate();
 
@@ -182,18 +134,6 @@ const Home = ({ toggleTheme, isDarkTheme }) => {
       y: 0,
       transition: {
         duration: 0.6,
-        ease: [0.16, 1, 0.3, 1],
-      },
-    },
-  };
-
-  const featureVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.8,
         ease: [0.16, 1, 0.3, 1],
       },
     },
@@ -236,48 +176,6 @@ const Home = ({ toggleTheme, isDarkTheme }) => {
               Começar Agora
             </ActionButton>
           </motion.div>
-
-          <FeatureGrid
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            transition={{ delay: 0.4 }}
-          >
-            <FeatureCard variants={featureVariants}>
-              <FeatureIcon color={({ theme }) => theme.colors.gradientPrimary}>
-                <FaCamera />
-              </FeatureIcon>
-              <FeatureTitle>Captura Inteligente</FeatureTitle>
-              <FeatureDescription>
-                Tecnologia avançada para capturar seus melhores momentos com
-                qualidade excepcional.
-              </FeatureDescription>
-            </FeatureCard>
-
-            <FeatureCard variants={featureVariants}>
-              <FeatureIcon
-                color={({ theme }) => theme.colors.gradientSecondary}
-              >
-                <FaMoon />
-              </FeatureIcon>
-              <FeatureTitle>Modo Noturno</FeatureTitle>
-              <FeatureDescription>
-                Interface adaptável que se ajusta automaticamente para uso
-                diurno ou noturno.
-              </FeatureDescription>
-            </FeatureCard>
-
-            <FeatureCard variants={featureVariants}>
-              <FeatureIcon color={({ theme }) => theme.colors.gradientAccent}>
-                <FaSun />
-              </FeatureIcon>
-              <FeatureTitle>Design Moderno</FeatureTitle>
-              <FeatureDescription>
-                Interface elegante e intuitiva para uma experiência de usuário
-                excepcional.
-              </FeatureDescription>
-            </FeatureCard>
-          </FeatureGrid>
         </ContentWrapper>
       </HomeContainer>
     </>

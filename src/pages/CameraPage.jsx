@@ -1,8 +1,8 @@
 // CameraPage.jsx
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   FaCamera,
   FaRedo,
@@ -108,26 +108,41 @@ const CameraSection = styled.div`
   width: 100%;
   min-height: 100vh;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 32px;
+  gap: 48px;
   padding: ${({ theme }) => theme.spacing.section};
   position: relative;
   z-index: 1;
 
   @media (max-width: 1024px) {
-    flex-direction: column;
     padding: ${({ theme }) => theme.spacing.large};
   }
 `;
 
+const ContentWrapper = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  width: 100%;
+  max-width: 1600px;
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+  }
+`;
+
 const CameraWrapper = styled.div`
-  flex: 1;
-  max-width: 640px;
+  flex: 2;
+  max-width: 1000px;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-bottom: 20px;
 `;
 
 const PreviewWrapper = styled(motion.div)`
@@ -146,6 +161,7 @@ const ButtonsContainer = styled(motion.div)`
   right: 0;
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 24px;
   z-index: 10;
 `;
@@ -201,23 +217,20 @@ const PhotoPreview = styled(motion.div)`
 `;
 
 const Countdown = styled(motion.div)`
-  font-size: 80px;
+  font-size: 40px;
   font-weight: 800;
   color: ${({ theme }) => theme.colors.primary};
-  text-shadow: 0 0 20px ${({ theme }) => theme.colors.primary}40;
-  margin-bottom: 16px;
+  text-shadow: 0 0 10px ${({ theme }) => theme.colors.primary}40;
   background: ${({ theme }) => theme.colors.gradientPrimary};
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  margin-right: 16px;
 `;
 
-const StatusText = styled(motion.p)`
-  font-size: 18px;
-  font-weight: 500;
-  color: ${({ theme }) => theme.colors.textSecondary};
-  margin-bottom: 16px;
-  text-align: center;
-`;
+// Componente memorizado para evitar re-renderizações desnecessárias
+const MemoizedCamera = memo(({ onCameraReady }) => {
+  return <Camera onCameraReady={onCameraReady} />;
+});
 
 const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   const videoRef = useRef(null);
@@ -226,7 +239,12 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   const [isCapturing, setIsCapturing] = useState(false);
   const navigate = useNavigate();
   const countdownRef = useRef(null);
-  const countdownValue = useRef(null);
+  const [countdownDisplay, setCountdownDisplay] = useState(null);
+
+  // Função de callback memorizada para evitar re-renderizações
+  const handleCameraReady = useRef((video) => {
+    videoRef.current = video;
+  }).current;
 
   useEffect(() => {
     return () => clearInterval(countdownRef.current);
@@ -252,7 +270,8 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
     photosRef.current = [];
     setPhotos([]);
     let count = 3;
-    countdownValue.current.innerText = count;
+    setCountdownDisplay(count);
+
     countdownRef.current = setInterval(() => {
       count--;
       if (count === 0) {
@@ -261,12 +280,12 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
           count = 3;
         } else {
           clearInterval(countdownRef.current);
-          countdownValue.current.innerText = "";
+          setCountdownDisplay(null);
           setIsCapturing(false);
           return;
         }
       }
-      countdownValue.current.innerText = count;
+      setCountdownDisplay(count);
     }, 1000);
   };
 
@@ -302,105 +321,95 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
         <BackgroundGradient />
 
         <CameraSection>
-          <CameraWrapper>
-            <Camera onCameraReady={(video) => (videoRef.current = video)} />
+          <ContentWrapper>
+            <CameraWrapper>
+              <MemoizedCamera onCameraReady={handleCameraReady} />
+            </CameraWrapper>
 
-            <AnimatePresence>
-              {isCapturing && (
-                <StatusText
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  Preparando para capturar...
-                </StatusText>
-              )}
-            </AnimatePresence>
-          </CameraWrapper>
-
-          <PreviewWrapper
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <Countdown
-              ref={countdownValue}
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0, 1, 0],
-                textShadow: [
-                  `0 0 20px rgba(108, 92, 231, 0.2)`,
-                  `0 0 40px rgba(108, 92, 231, 0.4)`,
-                  `0 0 20px rgba(108, 92, 231, 0.2)`,
-                ],
-              }}
-              transition={{ duration: 1, repeat: Infinity }}
-            />
-
-            <PhotosGrid
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
+            <PreviewWrapper
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
             >
-              {photos.map((photo, index) => (
-                <PhotoPreview
-                  key={index}
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <img src={photo} alt={`Foto ${index + 1}`} />
-                </PhotoPreview>
-              ))}
-              {[...Array(4 - photos.length)].map((_, index) => (
-                <PhotoPreview key={`empty-${index}`} empty>
-                  <img
-                    src="/assets/placeholder-photo.png"
-                    alt="Espaço para foto"
-                    style={{ opacity: 0.2 }}
-                  />
-                </PhotoPreview>
-              ))}
-            </PhotosGrid>
-
-            {photos.length > 0 && (
-              <StatusText>{photos.length}/4 fotos capturadas</StatusText>
-            )}
-          </PreviewWrapper>
+              <PhotosGrid
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                {photos.map((photo, index) => (
+                  <PhotoPreview
+                    key={index}
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <img src={photo} alt={`Foto ${index + 1}`} />
+                  </PhotoPreview>
+                ))}
+                {[...Array(4 - photos.length)].map((_, index) => (
+                  <PhotoPreview key={`empty-${index}`} empty>
+                    <img
+                      src="/assets/placeholder-photo.png"
+                      alt="Espaço para foto"
+                      style={{ opacity: 0.2 }}
+                    />
+                  </PhotoPreview>
+                ))}
+              </PhotosGrid>
+            </PreviewWrapper>
+          </ContentWrapper>
 
           <ButtonsContainer
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            {photos.length < 4 ? (
-              <StyledButton
-                onClick={startAutoCapture}
-                variant="primary"
-                disabled={isCapturing}
-                whileHover={{ scale: 1.05, y: -5 }}
-                whileTap={{ scale: 0.98 }}
+            {isCapturing && countdownDisplay ? (
+              <Countdown
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0, 1, 0],
+                  textShadow: [
+                    `0 0 10px rgba(108, 92, 231, 0.2)`,
+                    `0 0 20px rgba(108, 92, 231, 0.4)`,
+                    `0 0 10px rgba(108, 92, 231, 0.2)`,
+                  ],
+                }}
+                transition={{ duration: 1, repeat: Infinity }}
               >
-                <FaCamera /> Capturar
-              </StyledButton>
+                {countdownDisplay}
+              </Countdown>
             ) : (
               <>
-                <StyledButton
-                  onClick={handleRedo}
-                  variant="glass"
-                  whileHover={{ scale: 1.05, y: -5 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <FaRedo /> Refazer
-                </StyledButton>
-                <StyledButton
-                  onClick={handleFinish}
-                  variant="primary"
-                  whileHover={{ scale: 1.05, y: -5 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <FaCheck /> Concluir
-                </StyledButton>
+                {photos.length < 4 ? (
+                  <StyledButton
+                    onClick={startAutoCapture}
+                    variant="primary"
+                    disabled={isCapturing}
+                    whileHover={{ scale: 1.05, y: -5 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <FaCamera /> Capturar
+                  </StyledButton>
+                ) : (
+                  <>
+                    <StyledButton
+                      onClick={handleRedo}
+                      variant="glass"
+                      whileHover={{ scale: 1.05, y: -5 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <FaRedo /> Refazer
+                    </StyledButton>
+                    <StyledButton
+                      onClick={handleFinish}
+                      variant="primary"
+                      whileHover={{ scale: 1.05, y: -5 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <FaCheck /> Concluir
+                    </StyledButton>
+                  </>
+                )}
               </>
             )}
           </ButtonsContainer>

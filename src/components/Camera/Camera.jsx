@@ -6,10 +6,11 @@ import { motion } from "framer-motion";
 const CameraWrapper = styled(motion.div)`
   position: relative;
   width: 100%;
-  max-width: 600px;
+  max-width: 1000px;
   border-radius: ${({ theme }) => theme.radii.large};
   overflow: hidden;
   box-shadow: ${({ theme }) => theme.shadows.elevated};
+  margin: 0 auto;
 
   &::before {
     content: "";
@@ -17,7 +18,7 @@ const CameraWrapper = styled(motion.div)`
     top: 0;
     left: 0;
     right: 0;
-    height: 2px;
+    height: 3px;
     background: ${({ theme }) => theme.colors.gradientPrimary};
     z-index: 2;
   }
@@ -38,12 +39,17 @@ const CameraWrapper = styled(motion.div)`
 
 const Video = styled.video`
   width: 100%;
+  height: auto;
+  min-height: 500px;
   display: block;
   border-radius: ${({ theme }) => theme.radii.large};
   transform: scaleX(-1); /* Mirror effect */
+  aspect-ratio: 16/9;
+  object-fit: cover;
 
   @media (max-width: 768px) {
     max-width: 100%;
+    min-height: 350px;
   }
 `;
 
