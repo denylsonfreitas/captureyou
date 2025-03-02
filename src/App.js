@@ -6,7 +6,6 @@ import { GlobalStyles } from "./styles/globalStyles";
 import HomePage from "./pages/Home";
 import CameraPage from "./pages/CameraPage";
 import ResultPage from "./pages/ResultPage";
-import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   const [isDarkTheme, setIsDarkTheme] = useState(true);
@@ -18,7 +17,6 @@ function App() {
   return (
     <ThemeProvider theme={isDarkTheme ? darkTheme : lightTheme}>
       <GlobalStyles />
-      <Analytics />
       <Routes>
         <Route
           path="/"
