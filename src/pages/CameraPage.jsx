@@ -61,6 +61,7 @@ const ContentWrapper = styled.div`
 
   @media (max-width: 768px) {
     gap: 16px;
+    padding: 0 8px;
   }
 `;
 
@@ -75,7 +76,8 @@ const CameraWrapper = styled.div`
 
   @media (max-width: 768px) {
     margin-bottom: 10px;
-    max-height: 60vh;
+    max-height: 50vh;
+    width: 100%;
   }
 `;
 
@@ -90,6 +92,7 @@ const PreviewWrapper = styled(motion.div)`
   @media (max-width: 768px) {
     max-width: 100%;
     gap: 16px;
+    width: 100%;
   }
 `;
 
@@ -112,6 +115,7 @@ const CameraOptionsContainer = styled(motion.div)`
   @media (max-width: 768px) {
     padding: 12px;
     gap: 12px;
+    margin-bottom: 8px;
   }
 `;
 
@@ -145,6 +149,11 @@ const OptionsTitle = styled.h3`
   font-weight: 600;
   color: ${({ theme }) => theme.colors.text};
   margin-bottom: 8px;
+
+  @media (max-width: 768px) {
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
 `;
 
 const OptionsRow = styled.div`
@@ -156,6 +165,7 @@ const OptionsRow = styled.div`
   @media (max-width: 768px) {
     gap: 8px;
     flex-wrap: wrap;
+    justify-content: center;
   }
 `;
 
@@ -193,6 +203,12 @@ const OptionButton = styled(motion.button)`
     font-size: 11px;
     flex: 1;
     min-width: 60px;
+    max-width: calc(50% - 8px);
+
+    svg {
+      font-size: 14px;
+      margin-bottom: 3px;
+    }
   }
 `;
 
@@ -209,6 +225,12 @@ const FilterPreview = styled.div`
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  @media (max-width: 768px) {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 3px;
   }
 `;
 
@@ -242,8 +264,10 @@ const StyledButton = styled(Button)`
   }
 
   @media (max-width: 768px) {
-    padding: 12px 24px;
+    padding: 14px 28px;
     font-size: 15px;
+    min-width: 120px;
+    min-height: 48px;
 
     svg {
       font-size: 18px;
@@ -278,6 +302,7 @@ const PhotoPreview = styled(motion.div)`
   border-radius: ${({ theme }) => theme.radii.medium};
   overflow: hidden;
   position: relative;
+  box-shadow: ${({ theme }) => theme.shadows.card};
 
   img {
     width: 100%;
@@ -593,9 +618,8 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   const toggleMirror = () => {
     setIsMirrored(!isMirrored);
     if (videoRef.current) {
-      videoRef.current.style.transform = isMirrored
-        ? "scaleX(1)"
-        : "scaleX(-1)";
+      videoRef.current.style.transform =
+        isMirrored || facingMode !== "user" ? "scaleX(1)" : "scaleX(-1)";
     }
   };
 
@@ -624,7 +648,17 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
 
         <CameraSection>
           <ContentWrapper>
-            <CameraWrapper style={isMobileDevice ? { maxHeight: "50vh" } : {}}>
+            <CameraWrapper
+              style={
+                isMobileDevice
+                  ? {
+                      maxHeight: facingMode === "environment" ? "40vh" : "50vh",
+                      marginBottom:
+                        facingMode === "environment" ? "5px" : "10px",
+                    }
+                  : {}
+              }
+            >
               <MemoizedCamera
                 onCameraReady={handleCameraReady}
                 isMirrored={isMirrored}
@@ -641,7 +675,15 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
               style={isMobileDevice ? { maxWidth: "100%" } : {}}
             >
               {isMobileDevice ? (
-                <div style={{ display: "flex", width: "100%", gap: "16px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    width: "100%",
+                    gap: "16px",
+                    flexDirection:
+                      facingMode === "environment" ? "column" : "row",
+                  }}
+                >
                   <CameraOptionsContainer
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}

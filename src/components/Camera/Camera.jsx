@@ -48,7 +48,8 @@ const Video = styled.video`
   height: 100%;
   display: block;
   border-radius: ${({ theme }) => theme.radii.large};
-  transform: ${({ mirrored }) => (mirrored ? "scaleX(-1)" : "scaleX(1)")};
+  transform: ${({ mirrored, $facingMode }) =>
+    mirrored && $facingMode === "user" ? "scaleX(-1)" : "scaleX(1)"};
   object-fit: cover;
   display: ${({ hidden }) => (hidden ? "none" : "block")};
 `;
@@ -335,7 +336,14 @@ const Camera = ({
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
     >
-      <Video ref={videoRef} autoPlay playsInline hidden={true} />
+      <Video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        hidden={true}
+        mirrored={isMirrored}
+        $facingMode={facingMode}
+      />
       <Canvas ref={canvasRef} />
       <CameraOverlay />
       <CameraCorner className="top-left" />

@@ -81,8 +81,12 @@ const PhotosGrid = styled.div`
     max-height: 400px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding-right: 12px;
     grid-auto-rows: 1fr;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 `;
 
@@ -139,6 +143,7 @@ const Photo = styled.div`
   @media (max-width: 768px) {
     aspect-ratio: 4/3;
     min-height: 180px;
+    margin-bottom: 16px;
   }
 `;
 
