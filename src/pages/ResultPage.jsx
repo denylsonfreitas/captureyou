@@ -947,7 +947,7 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
               $whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
             >
-              <FaShare /> Compartilhar
+              <FaShare /> Compartilhar (Em breve)
             </ActionButton>
 
             <ActionButton
