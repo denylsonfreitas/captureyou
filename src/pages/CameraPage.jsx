@@ -341,28 +341,6 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
           userAgent.toLowerCase()
         );
       setIsMobileDevice(isMobile);
-
-      // Se for dispositivo móvel, verificar orientação
-      if (isMobile) {
-        const checkOrientation = () => {
-          if (window.orientation === 0 || window.orientation === 180) {
-            alert(
-              "Para uma melhor experiência, recomendamos usar o aplicativo na orientação horizontal (paisagem)."
-            );
-          }
-        };
-
-        // Verificar orientação inicial
-        checkOrientation();
-
-        // Adicionar listener para mudanças de orientação
-        window.addEventListener("orientationchange", checkOrientation);
-
-        // Cleanup
-        return () => {
-          window.removeEventListener("orientationchange", checkOrientation);
-        };
-      }
     };
 
     checkMobileDevice();
