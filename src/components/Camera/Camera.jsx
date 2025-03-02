@@ -177,7 +177,7 @@ const Camera = ({
         for (let i = 0; i < data.length; i += 4) {
           const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
           data[i] = avg; // red
-          data[i + 1] = avg; // green
+          data[i + 1] = avg; // greenn
           data[i + 2] = avg; // blue
         }
         context.putImageData(imageData, 0, 0);
