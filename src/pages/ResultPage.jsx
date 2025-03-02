@@ -56,7 +56,7 @@ const PhotoPreview = styled(motion.div)`
   border-radius: ${({ theme }) => theme.radii.large};
   box-shadow: ${({ theme }) => theme.shadows.elevated};
   width: 100%;
-  max-width: 300px;
+  max-width: 230px;
   height: 100%;
   transition: all 0.3s ease;
   display: flex;
@@ -77,11 +77,10 @@ const PhotosGrid = styled.div`
   margin-bottom: 24px;
 
   @media (max-width: 768px) {
-    gap: 16px;
+    gap: 14px;
     max-height: 400px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding-right: 12px;
     grid-auto-rows: 1fr;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -92,13 +91,12 @@ const PhotosGrid = styled.div`
 `;
 
 const MessageContainer = styled.div`
-  width: 220px;
-  max-width: 90%;
-  margin-top: 2vh;
+  width: 200px;
+  max-width: 100%;
   padding: 1.8vh 2vh;
   text-align: center;
   font-size: 1.2rem;
-  font-weight: 600;
+  font-weight: 500;
   color: ${({ theme, $textColor }) => $textColor || theme.colors.text};
   overflow: hidden;
   word-break: break-word;
@@ -470,20 +468,20 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
     try {
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
-      const padding = 20;
+      const padding = 30;
       const photoWidth = 300;
-      const photoHeight = 225; // Proporção 4:3
-      const gap = 20;
+      const photoHeight = 225;
+      const gap = 30;
       const borderRadius = 10;
 
       let messageHeight = 0;
       let messageLines = [];
 
       if (message) {
-        context.font = "bold 20px Inter, Arial, sans-serif";
+        context.font = "bold 22px Inter, Arial, sans-serif";
         const maxWidth = photoWidth - 60;
-        const lineHeight = 25;
-        const messageBoxPadding = 25;
+        const lineHeight = 28;
+        const messageBoxPadding = 30;
 
         const words = message.split(" ");
         let line = "";
@@ -531,15 +529,17 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
           messageLines.length * lineHeight + messageBoxPadding * 2;
       }
 
-      // Calcular dimensões do canvas
       const canvasWidth = photoWidth + padding * 2;
       const canvasHeight =
-        photoHeight * 4 + gap * 3 + padding * 2 + messageHeight;
+        photoHeight * 4 +
+        gap * 3 +
+        padding * 2 +
+        messageHeight +
+        (message ? gap : 0);
 
       canvas.width = canvasWidth;
       canvas.height = canvasHeight;
 
-      // Preencher o fundo
       if (border.startsWith("#")) {
         context.fillStyle = border;
         context.fillRect(0, 0, canvasWidth, canvasHeight);
@@ -554,7 +554,6 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
         context.fillRect(0, 0, canvasWidth, canvasHeight);
       }
 
-      // Carregar e desenhar as fotos
       const photoPromises = photos.map((photoSrc) => {
         return new Promise((resolve) => {
           const img = new Image();
@@ -565,11 +564,9 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
 
       const photoImages = await Promise.all(photoPromises);
 
-      // Desenhar as fotos em layout 1x4
       photoImages.forEach((img, index) => {
         const posY = padding + index * (photoHeight + gap);
 
-        // Arredondar cantos
         context.save();
         context.beginPath();
         context.moveTo(padding + borderRadius, posY);
@@ -599,7 +596,6 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
         context.closePath();
         context.clip();
 
-        // Desenhar a imagem mantendo a proporção
         const imgRatio = img.width / img.height;
         const targetRatio = photoWidth / photoHeight;
 
@@ -609,12 +605,10 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
           offsetY = 0;
 
         if (imgRatio > targetRatio) {
-          // Imagem mais larga que o alvo
           drawHeight = photoHeight;
           drawWidth = img.width * (photoHeight / img.height);
           offsetX = (photoWidth - drawWidth) / 2;
         } else {
-          // Imagem mais alta que o alvo
           drawWidth = photoWidth;
           drawHeight = img.height * (photoWidth / img.width);
           offsetY = (photoHeight - drawHeight) / 2;
@@ -631,20 +625,18 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
         context.restore();
       });
 
-      // Desenhar a mensagem
       if (message) {
-        const messageY = padding + photoHeight * 4 + gap * 3;
+        const messageY = padding + photoHeight * 4 + gap * 3 + gap;
         const messageX = padding;
         const messageWidth = photoWidth;
         const messageBoxY = messageY;
 
-        context.fillStyle = "rgba(255, 255, 255, 0.2)";
-        context.shadowColor = "rgba(255, 255, 255, 0.1)";
-        context.shadowBlur = 4;
+        context.fillStyle = "rgba(255, 255, 255, 0.25)";
+        context.shadowColor = "rgba(0, 0, 0, 0.2)";
+        context.shadowBlur = 6;
         context.shadowOffsetX = 0;
-        context.shadowOffsetY = 2;
+        context.shadowOffsetY = 3;
 
-        // Desenhar o fundo da mensagem com cantos arredondados
         context.beginPath();
         context.moveTo(messageX + borderRadius, messageBoxY);
         context.lineTo(messageX + messageWidth - borderRadius, messageBoxY);
@@ -681,31 +673,27 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
         context.closePath();
         context.fill();
 
-        // Resetar sombra para o texto
         context.shadowColor = "transparent";
         context.shadowBlur = 0;
         context.shadowOffsetX = 0;
         context.shadowOffsetY = 0;
 
-        // Desenhar o texto
         context.fillStyle = textColor;
         context.textAlign = "center";
-        context.font = "bold 20px Inter, Arial, sans-serif";
+        context.font = "bold 22px Inter, Arial, sans-serif";
 
-        const lineHeight = 25;
-        const textY = messageBoxY + 25;
+        const textY = messageBoxY + 30;
 
         messageLines.forEach((line, index) => {
           context.fillText(
             line,
             messageX + messageWidth / 2,
-            textY + index * lineHeight
+            textY + index * 28
           );
         });
       }
 
-      // Converter o canvas para uma imagem e fazer o download
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
       const link = document.createElement("a");
       link.href = dataUrl;
       link.download = "captureyou-photos.jpg";
