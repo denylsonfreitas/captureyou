@@ -63,6 +63,11 @@ const ContentWrapper = styled.div`
     gap: 16px;
     padding: 0 8px;
   }
+
+  @media (max-width: 480px) {
+    gap: 12px;
+    padding: 0 4px;
+  }
 `;
 
 const CameraWrapper = styled.div`
@@ -117,6 +122,11 @@ const CameraOptionsContainer = styled(motion.div)`
     gap: 12px;
     margin-bottom: 8px;
   }
+
+  @media (max-width: 480px) {
+    padding: 10px;
+    gap: 8px;
+  }
 `;
 
 const DisabledOverlay = styled.div`
@@ -167,6 +177,10 @@ const OptionsRow = styled.div`
     flex-wrap: wrap;
     justify-content: center;
   }
+
+  @media (max-width: 480px) {
+    gap: 6px;
+  }
 `;
 
 const OptionButton = styled(motion.button)`
@@ -208,6 +222,17 @@ const OptionButton = styled(motion.button)`
     svg {
       font-size: 14px;
       margin-bottom: 3px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    padding: 5px 8px;
+    font-size: 10px;
+    min-width: 50px;
+
+    svg {
+      font-size: 12px;
+      margin-bottom: 2px;
     }
   }
 `;
@@ -358,6 +383,7 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   const triggerFlashRef = useRef(null);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [facingMode, setFacingMode] = useState("user");
+  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
 
   useEffect(() => {
     const checkMobileDevice = () => {
@@ -369,7 +395,16 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
       setIsMobileDevice(isMobile);
     };
 
+    const handleResize = () => {
+      setScreenWidth(window.innerWidth);
+    };
+
     checkMobileDevice();
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   const handleCameraReady = useRef((video, triggerFlash) => {
@@ -652,9 +687,8 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
               style={
                 isMobileDevice
                   ? {
-                      maxHeight: facingMode === "environment" ? "40vh" : "50vh",
-                      marginBottom:
-                        facingMode === "environment" ? "5px" : "10px",
+                      maxHeight: "50vh",
+                      marginBottom: "10px",
                     }
                   : {}
               }
@@ -679,9 +713,8 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                   style={{
                     display: "flex",
                     width: "100%",
-                    gap: "16px",
-                    flexDirection:
-                      facingMode === "environment" ? "column" : "row",
+                    gap: screenWidth < 600 ? "8px" : "16px",
+                    flexDirection: screenWidth < 600 ? "column" : "row",
                   }}
                 >
                   <CameraOptionsContainer

@@ -77,10 +77,11 @@ const PhotosGrid = styled.div`
   margin-bottom: 24px;
 
   @media (max-width: 768px) {
-    gap: 12px;
+    gap: 16px;
     max-height: 400px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    padding-right: 12px;
     grid-auto-rows: 1fr;
     scrollbar-width: none;
     -ms-overflow-style: none;
