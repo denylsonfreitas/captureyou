@@ -34,6 +34,14 @@ const CameraSection = styled.div`
 
   @media (max-width: 1024px) {
     padding: ${({ theme }) => theme.spacing.large};
+    gap: 24px;
+  }
+
+  @media (max-width: 768px) {
+    padding: ${({ theme }) => theme.spacing.medium};
+    gap: 16px;
+    justify-content: flex-start;
+    padding-top: 60px;
   }
 `;
 
@@ -48,6 +56,11 @@ const ContentWrapper = styled.div`
 
   @media (max-width: 1024px) {
     flex-direction: column;
+    gap: 24px;
+  }
+
+  @media (max-width: 768px) {
+    gap: 16px;
   }
 `;
 
@@ -59,6 +72,11 @@ const CameraWrapper = styled.div`
   flex-direction: column;
   align-items: center;
   margin-bottom: 20px;
+
+  @media (max-width: 768px) {
+    margin-bottom: 10px;
+    max-height: 60vh;
+  }
 `;
 
 const PreviewWrapper = styled(motion.div)`
@@ -68,6 +86,11 @@ const PreviewWrapper = styled(motion.div)`
   flex-direction: column;
   align-items: center;
   gap: 24px;
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+    gap: 16px;
+  }
 `;
 
 const CameraOptionsContainer = styled(motion.div)`
@@ -85,6 +108,11 @@ const CameraOptionsContainer = styled(motion.div)`
   opacity: ${({ disabled }) => (disabled ? 0.6 : 1)};
   pointer-events: ${({ disabled }) => (disabled ? "none" : "auto")};
   position: relative;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+    gap: 12px;
+  }
 `;
 
 const DisabledOverlay = styled.div`
@@ -124,6 +152,11 @@ const OptionsRow = styled.div`
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+
+  @media (max-width: 768px) {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
 `;
 
 const OptionButton = styled(motion.button)`
@@ -154,6 +187,13 @@ const OptionButton = styled(motion.button)`
       $active ? theme.colors.primary : theme.colors.backgroundHover};
     transform: translateY(-2px);
   }
+
+  @media (max-width: 768px) {
+    padding: 6px 10px;
+    font-size: 11px;
+    flex: 1;
+    min-width: 60px;
+  }
 `;
 
 const FilterPreview = styled.div`
@@ -182,6 +222,11 @@ const ButtonsContainer = styled(motion.div)`
   align-items: center;
   gap: 24px;
   z-index: 10;
+
+  @media (max-width: 768px) {
+    bottom: 16px;
+    gap: 16px;
+  }
 `;
 
 const StyledButton = styled(Button)`
@@ -194,6 +239,16 @@ const StyledButton = styled(Button)`
   svg {
     font-size: 20px;
     margin-right: 8px;
+  }
+
+  @media (max-width: 768px) {
+    padding: 12px 24px;
+    font-size: 15px;
+
+    svg {
+      font-size: 18px;
+      margin-right: 6px;
+    }
   }
 `;
 
@@ -210,11 +265,16 @@ const PhotosGrid = styled(motion.div)`
   border-radius: ${({ theme }) => theme.radii.large};
   box-shadow: ${({ theme }) => theme.shadows.card};
   border: 1px solid ${({ theme }) => theme.colors.border};
+
+  @media (max-width: 768px) {
+    padding: 12px;
+    gap: 8px;
+  }
 `;
 
 const PhotoPreview = styled(motion.div)`
   width: 100%;
-  aspect-ratio: 3/4;
+  aspect-ratio: 4/3;
   border-radius: ${({ theme }) => theme.radii.medium};
   overflow: hidden;
   position: relative;
@@ -270,6 +330,43 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   const [selectedFilter, setSelectedFilter] = useState("none");
   const [flashMode, setFlashMode] = useState("off");
   const triggerFlashRef = useRef(null);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
+
+  // Detectar se é um dispositivo móvel
+  useEffect(() => {
+    const checkMobileDevice = () => {
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+      const isMobile =
+        /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+          userAgent.toLowerCase()
+        );
+      setIsMobileDevice(isMobile);
+
+      // Se for dispositivo móvel, verificar orientação
+      if (isMobile) {
+        const checkOrientation = () => {
+          if (window.orientation === 0 || window.orientation === 180) {
+            alert(
+              "Para uma melhor experiência, recomendamos usar o aplicativo na orientação horizontal (paisagem)."
+            );
+          }
+        };
+
+        // Verificar orientação inicial
+        checkOrientation();
+
+        // Adicionar listener para mudanças de orientação
+        window.addEventListener("orientationchange", checkOrientation);
+
+        // Cleanup
+        return () => {
+          window.removeEventListener("orientationchange", checkOrientation);
+        };
+      }
+    };
+
+    checkMobileDevice();
+  }, []);
 
   // Função de callback memorizada para evitar re-renderizações
   const handleCameraReady = useRef((video, triggerFlash) => {
@@ -291,28 +388,55 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
 
     const canvas = document.createElement("canvas");
 
-    // Reduzir as dimensões da imagem capturada
-    const maxDimension = 1200; // Dimensão máxima para a captura
+    // Configurar as dimensões da imagem capturada com proporção 4:3
+    const aspectRatio = 4 / 3; // Proporção largura/altura (4:3)
+    const maxWidth = 1200; // Largura máxima para a captura
+
     let width = videoRef.current.videoWidth;
     let height = videoRef.current.videoHeight;
 
-    if (width > height && width > maxDimension) {
-      height = (height / width) * maxDimension;
-      width = maxDimension;
-    } else if (height > maxDimension) {
-      width = (width / height) * maxDimension;
-      height = maxDimension;
+    // Calcular as dimensões mantendo a proporção 4:3
+    if (width / height < aspectRatio) {
+      // Se o vídeo for mais alto que a proporção desejada, cortar o topo/base
+      height = width / aspectRatio;
+    } else {
+      // Se o vídeo for mais largo que a proporção desejada, cortar as laterais
+      width = height * aspectRatio;
+    }
+
+    // Redimensionar para o tamanho máximo mantendo a proporção
+    if (width > maxWidth) {
+      height = (height / width) * maxWidth;
+      width = maxWidth;
     }
 
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext("2d");
-    context.drawImage(videoRef.current, 0, 0, width, height);
+
+    // Centralizar o recorte do vídeo
+    const sourceX = (videoRef.current.videoWidth - width) / 2;
+    const sourceY = (videoRef.current.videoHeight - height) / 2;
+
+    // Desenhar apenas a parte central do vídeo para manter a proporção
+    context.drawImage(
+      videoRef.current,
+      sourceX,
+      sourceY,
+      width,
+      height, // Fonte (x, y, largura, altura)
+      0,
+      0,
+      width,
+      height // Destino (x, y, largura, altura)
+    );
 
     // Apply mirroring if needed
     if (isMirrored) {
+      context.save();
       context.scale(-1, 1);
       context.drawImage(canvas, -canvas.width, 0);
+      context.restore();
     }
 
     // Apply selected filter
@@ -440,23 +564,45 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        // Reduzir também as dimensões da imagem
-        const maxDimension = 800;
+
+        // Manter a proporção 4:3 ao redimensionar
+        const aspectRatio = 4 / 3;
         let width = img.width;
         let height = img.height;
 
-        if (width > height && width > maxDimension) {
+        // Ajustar para a proporção 4:3
+        if (width / height < aspectRatio) {
+          height = width / aspectRatio;
+        } else {
+          width = height * aspectRatio;
+        }
+
+        // Reduzir também as dimensões da imagem
+        const maxDimension = 1200;
+        if (width > maxDimension) {
           height = (height / width) * maxDimension;
           width = maxDimension;
-        } else if (height > maxDimension) {
-          width = (width / height) * maxDimension;
-          height = maxDimension;
         }
 
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
+
+        // Centralizar a imagem no canvas
+        const sourceX = (img.width - width) / 2;
+        const sourceY = (img.height - height) / 2;
+
+        ctx.drawImage(
+          img,
+          sourceX,
+          sourceY,
+          width,
+          height,
+          0,
+          0,
+          width,
+          height
+        );
         resolve(canvas.toDataURL("image/jpeg", quality));
       };
       img.src = base64Image;
@@ -519,7 +665,7 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
 
         <CameraSection>
           <ContentWrapper>
-            <CameraWrapper>
+            <CameraWrapper style={isMobileDevice ? { maxHeight: "50vh" } : {}}>
               <MemoizedCamera
                 onCameraReady={handleCameraReady}
                 isMirrored={isMirrored}
@@ -532,123 +678,267 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
+              style={isMobileDevice ? { maxWidth: "100%" } : {}}
             >
-              <CameraOptionsContainer
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                disabled={isCapturing}
-              >
-                {isCapturing && (
-                  <DisabledOverlay>
-                    <DisabledMessage>
-                      Opções desativadas durante a captura
-                    </DisabledMessage>
-                  </DisabledOverlay>
-                )}
-
-                <OptionsTitle>Opções da Câmera</OptionsTitle>
-
-                <OptionsRow>
-                  <OptionButton
-                    onClick={toggleMirror}
-                    $active={isMirrored}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+              {isMobileDevice ? (
+                <div style={{ display: "flex", width: "100%", gap: "16px" }}>
+                  <CameraOptionsContainer
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    disabled={isCapturing}
+                    style={{ flex: 1 }}
                   >
-                    <FaRedo />
-                    Inverter
-                  </OptionButton>
+                    {isCapturing && (
+                      <DisabledOverlay>
+                        <DisabledMessage>
+                          Opções desativadas durante a captura
+                        </DisabledMessage>
+                      </DisabledOverlay>
+                    )}
 
-                  <OptionButton
-                    onClick={() =>
-                      handleFlashMode(flashMode === "off" ? "on" : "off")
-                    }
-                    $active={flashMode === "on"}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <FaCamera />
-                    Flash
-                  </OptionButton>
-                </OptionsRow>
+                    <OptionsTitle>Opções da Câmera</OptionsTitle>
 
-                <OptionsTitle>Filtros</OptionsTitle>
-                <OptionsRow>
-                  <OptionButton
-                    onClick={() => handleFilterChange("none")}
-                    $active={selectedFilter === "none"}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <FilterPreview $active={selectedFilter === "none"}>
-                      <img src="/assets/filters/color-wheel.png" alt="Normal" />
-                    </FilterPreview>
-                    Normal
-                  </OptionButton>
+                    <OptionsRow>
+                      <OptionButton
+                        onClick={toggleMirror}
+                        $active={isMirrored}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <FaRedo />
+                        Inverter
+                      </OptionButton>
 
-                  <OptionButton
-                    onClick={() => handleFilterChange("grayscale")}
-                    $active={selectedFilter === "grayscale"}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <FilterPreview $active={selectedFilter === "grayscale"}>
-                      <img src="/assets/filters/black-white.png" alt="P&B" />
-                    </FilterPreview>
-                    P&B
-                  </OptionButton>
+                      <OptionButton
+                        onClick={() =>
+                          handleFlashMode(flashMode === "off" ? "on" : "off")
+                        }
+                        $active={flashMode === "on"}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <FaCamera />
+                        Flash
+                      </OptionButton>
+                    </OptionsRow>
 
-                  <OptionButton
-                    onClick={() => handleFilterChange("sepia")}
-                    $active={selectedFilter === "sepia"}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <FilterPreview $active={selectedFilter === "sepia"}>
-                      <img src="/assets/filters/sepia.png" alt="Sépia" />
-                    </FilterPreview>
-                    Sépia
-                  </OptionButton>
+                    <OptionsTitle>Filtros</OptionsTitle>
+                    <OptionsRow>
+                      <OptionButton
+                        onClick={() => handleFilterChange("none")}
+                        $active={selectedFilter === "none"}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <FilterPreview $active={selectedFilter === "none"}>
+                          <img
+                            src="/assets/filters/color-wheel.png"
+                            alt="Normal"
+                          />
+                        </FilterPreview>
+                        Normal
+                      </OptionButton>
 
-                  <OptionButton
-                    onClick={() => handleFilterChange("vintage")}
-                    $active={selectedFilter === "vintage"}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <FilterPreview $active={selectedFilter === "vintage"}>
-                      <img src="/assets/filters/vintage.png" alt="Vintage" />
-                    </FilterPreview>
-                    Vintage
-                  </OptionButton>
-                </OptionsRow>
-              </CameraOptionsContainer>
+                      <OptionButton
+                        onClick={() => handleFilterChange("grayscale")}
+                        $active={selectedFilter === "grayscale"}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <FilterPreview $active={selectedFilter === "grayscale"}>
+                          <img
+                            src="/assets/filters/black-white.png"
+                            alt="P&B"
+                          />
+                        </FilterPreview>
+                        P&B
+                      </OptionButton>
 
-              <PhotosGrid
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-              >
-                {photos.map((photo, index) => (
-                  <PhotoPreview
-                    key={index}
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.2 }}
+                      <OptionButton
+                        onClick={() => handleFilterChange("sepia")}
+                        $active={selectedFilter === "sepia"}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <FilterPreview $active={selectedFilter === "sepia"}>
+                          <img src="/assets/filters/sepia.png" alt="Sépia" />
+                        </FilterPreview>
+                        Sépia
+                      </OptionButton>
+
+                      <OptionButton
+                        onClick={() => handleFilterChange("vintage")}
+                        $active={selectedFilter === "vintage"}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <FilterPreview $active={selectedFilter === "vintage"}>
+                          <img
+                            src="/assets/filters/vintage.png"
+                            alt="Vintage"
+                          />
+                        </FilterPreview>
+                        Vintage
+                      </OptionButton>
+                    </OptionsRow>
+                  </CameraOptionsContainer>
+
+                  <PhotosGrid
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    style={{ flex: 1 }}
                   >
-                    <img src={photo} alt={`Foto ${index + 1}`} />
-                  </PhotoPreview>
-                ))}
-                {[...Array(4 - photos.length)].map((_, index) => (
-                  <PhotoPreview key={`empty-${index}`} $empty>
-                    <img
-                      src="/assets/placeholder-photo.png"
-                      alt="Espaço para foto"
-                      style={{ opacity: 0.2 }}
-                    />
-                  </PhotoPreview>
-                ))}
-              </PhotosGrid>
+                    {photos.map((photo, index) => (
+                      <PhotoPreview
+                        key={index}
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <img src={photo} alt={`Foto ${index + 1}`} />
+                      </PhotoPreview>
+                    ))}
+                    {[...Array(4 - photos.length)].map((_, index) => (
+                      <PhotoPreview key={`empty-${index}`} $empty>
+                        <img
+                          src="/assets/placeholder-photo.png"
+                          alt="Espaço para foto"
+                          style={{ opacity: 0.2 }}
+                        />
+                      </PhotoPreview>
+                    ))}
+                  </PhotosGrid>
+                </div>
+              ) : (
+                <>
+                  <CameraOptionsContainer
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    disabled={isCapturing}
+                  >
+                    {isCapturing && (
+                      <DisabledOverlay>
+                        <DisabledMessage>
+                          Opções desativadas durante a captura
+                        </DisabledMessage>
+                      </DisabledOverlay>
+                    )}
+
+                    <OptionsTitle>Opções da Câmera</OptionsTitle>
+
+                    <OptionsRow>
+                      <OptionButton
+                        onClick={toggleMirror}
+                        $active={isMirrored}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <FaRedo />
+                        Inverter
+                      </OptionButton>
+
+                      <OptionButton
+                        onClick={() =>
+                          handleFlashMode(flashMode === "off" ? "on" : "off")
+                        }
+                        $active={flashMode === "on"}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <FaCamera />
+                        Flash
+                      </OptionButton>
+                    </OptionsRow>
+
+                    <OptionsTitle>Filtros</OptionsTitle>
+                    <OptionsRow>
+                      <OptionButton
+                        onClick={() => handleFilterChange("none")}
+                        $active={selectedFilter === "none"}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <FilterPreview $active={selectedFilter === "none"}>
+                          <img
+                            src="/assets/filters/color-wheel.png"
+                            alt="Normal"
+                          />
+                        </FilterPreview>
+                        Normal
+                      </OptionButton>
+
+                      <OptionButton
+                        onClick={() => handleFilterChange("grayscale")}
+                        $active={selectedFilter === "grayscale"}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <FilterPreview $active={selectedFilter === "grayscale"}>
+                          <img
+                            src="/assets/filters/black-white.png"
+                            alt="P&B"
+                          />
+                        </FilterPreview>
+                        P&B
+                      </OptionButton>
+
+                      <OptionButton
+                        onClick={() => handleFilterChange("sepia")}
+                        $active={selectedFilter === "sepia"}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <FilterPreview $active={selectedFilter === "sepia"}>
+                          <img src="/assets/filters/sepia.png" alt="Sépia" />
+                        </FilterPreview>
+                        Sépia
+                      </OptionButton>
+
+                      <OptionButton
+                        onClick={() => handleFilterChange("vintage")}
+                        $active={selectedFilter === "vintage"}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <FilterPreview $active={selectedFilter === "vintage"}>
+                          <img
+                            src="/assets/filters/vintage.png"
+                            alt="Vintage"
+                          />
+                        </FilterPreview>
+                        Vintage
+                      </OptionButton>
+                    </OptionsRow>
+                  </CameraOptionsContainer>
+
+                  <PhotosGrid
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    {photos.map((photo, index) => (
+                      <PhotoPreview
+                        key={index}
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <img src={photo} alt={`Foto ${index + 1}`} />
+                      </PhotoPreview>
+                    ))}
+                    {[...Array(4 - photos.length)].map((_, index) => (
+                      <PhotoPreview key={`empty-${index}`} $empty>
+                        <img
+                          src="/assets/placeholder-photo.png"
+                          alt="Espaço para foto"
+                          style={{ opacity: 0.2 }}
+                        />
+                      </PhotoPreview>
+                    ))}
+                  </PhotosGrid>
+                </>
+              )}
             </PreviewWrapper>
           </ContentWrapper>
 

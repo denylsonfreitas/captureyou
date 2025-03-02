@@ -10,6 +10,13 @@ const CameraWrapper = styled(motion.div)`
   overflow: hidden;
   box-shadow: ${({ theme }) => theme.shadows.elevated};
   margin: 0 auto;
+  aspect-ratio: 4/3;
+
+  @media (max-width: 768px) {
+    aspect-ratio: 4/3;
+    max-height: 50vh;
+    width: auto;
+  }
 
   &::before {
     content: "";
@@ -38,34 +45,20 @@ const CameraWrapper = styled(motion.div)`
 
 const Video = styled.video`
   width: 100%;
-  height: auto;
-  min-height: 500px;
+  height: 100%;
   display: block;
   border-radius: ${({ theme }) => theme.radii.large};
   transform: ${({ mirrored }) => (mirrored ? "scaleX(-1)" : "scaleX(1)")};
-  aspect-ratio: 16/9;
   object-fit: cover;
   display: ${({ hidden }) => (hidden ? "none" : "block")};
-
-  @media (max-width: 768px) {
-    max-width: 100%;
-    min-height: 350px;
-  }
 `;
 
 const Canvas = styled.canvas`
   width: 100%;
-  height: auto;
-  min-height: 500px;
+  height: 100%;
   display: block;
   border-radius: ${({ theme }) => theme.radii.large};
-  aspect-ratio: 16/9;
   object-fit: cover;
-
-  @media (max-width: 768px) {
-    max-width: 100%;
-    min-height: 350px;
-  }
 `;
 
 const CameraOverlay = styled.div`
@@ -258,16 +251,29 @@ const Camera = ({
   useEffect(() => {
     const startCamera = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
+        const constraints = {
           video: {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
+            width: { ideal: 1440 },
+            height: { ideal: 1080 },
+            aspectRatio: { ideal: 4 / 3 }, // Proporção largura/altura (4:3)
             facingMode: "user",
           },
-        });
+        };
 
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
+        // Tenta primeiro com a proporção ideal
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          videoRef.current.srcObject = stream;
+          streamRef.current = stream;
+        } catch (err) {
+          // Se falhar, tenta com configurações mais básicas
+          console.log("Tentando configuração alternativa da câmera");
+          const fallbackStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user" },
+          });
+          videoRef.current.srcObject = fallbackStream;
+          streamRef.current = fallbackStream;
+        }
 
         // Wait for video to be ready
         videoRef.current.onloadedmetadata = () => {
