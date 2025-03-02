@@ -154,6 +154,7 @@ const Camera = ({
   isMirrored = true,
   selectedFilter = "none",
   flashMode = "off",
+  facingMode = "user",
 }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -162,16 +163,15 @@ const Camera = ({
   const [showFlash, setShowFlash] = useState(false);
 
   const applyFilter = useCallback((context, width, height, filter) => {
-    // Simple filter implementations
     switch (filter) {
       case "grayscale":
         const imageData = context.getImageData(0, 0, width, height);
         const data = imageData.data;
         for (let i = 0; i < data.length; i += 4) {
           const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-          data[i] = avg; // red
-          data[i + 1] = avg; // green
-          data[i + 2] = avg; // blue
+          data[i] = avg;
+          data[i + 1] = avg;
+          data[i + 2] = avg;
         }
         context.putImageData(imageData, 0, 0);
         break;
@@ -206,11 +206,9 @@ const Camera = ({
       const canvas = canvasRef.current;
       const context = canvas.getContext("2d");
 
-      // Clear canvas
       context.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw video frame to canvas
-      if (isMirrored) {
+      if (isMirrored && facingMode === "user") {
         context.save();
         context.scale(-1, 1);
         context.drawImage(
@@ -225,20 +223,16 @@ const Camera = ({
         context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
       }
 
-      // Apply selected filter
       if (selectedFilter !== "none") {
         applyFilter(context, canvas.width, canvas.height, selectedFilter);
       }
 
-      // Request next frame
       animationRef.current = requestAnimationFrame(renderFrame);
     };
 
-    // Start the rendering loop
     renderFrame();
-  }, [isMirrored, selectedFilter, applyFilter]);
+  }, [isMirrored, selectedFilter, applyFilter, facingMode]);
 
-  // Função para ativar o flash
   const triggerFlash = useCallback(() => {
     if (flashMode === "on") {
       setShowFlash(true);
@@ -255,37 +249,35 @@ const Camera = ({
           video: {
             width: { ideal: 1440 },
             height: { ideal: 1080 },
-            aspectRatio: { ideal: 4 / 3 }, // Proporção largura/altura (4:3)
-            facingMode: "user",
+            aspectRatio: { ideal: 4 / 3 },
+            facingMode: facingMode,
           },
         };
 
-        // Tenta primeiro com a proporção ideal
         try {
+          if (streamRef.current) {
+            streamRef.current.getTracks().forEach((track) => track.stop());
+          }
+
           const stream = await navigator.mediaDevices.getUserMedia(constraints);
           videoRef.current.srcObject = stream;
           streamRef.current = stream;
         } catch (err) {
-          // Se falhar, tenta com configurações mais básicas
           console.log("Tentando configuração alternativa da câmera");
           const fallbackStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "user" },
+            video: { facingMode: facingMode },
           });
           videoRef.current.srcObject = fallbackStream;
           streamRef.current = fallbackStream;
         }
 
-        // Wait for video to be ready
         videoRef.current.onloadedmetadata = () => {
-          // Initialize canvas
           const canvas = canvasRef.current;
           canvas.width = videoRef.current.videoWidth;
           canvas.height = videoRef.current.videoHeight;
 
-          // Start rendering with filters
           startRendering();
 
-          // Pass video element to parent component
           onCameraReady(videoRef.current, triggerFlash);
         };
       } catch (err) {
@@ -303,7 +295,7 @@ const Camera = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [onCameraReady, startRendering, triggerFlash]);
+  }, [onCameraReady, startRendering, triggerFlash, facingMode]);
 
   // Update rendering when filter or mirror settings change
   useEffect(() => {

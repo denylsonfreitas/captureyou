@@ -68,13 +68,22 @@ const PhotoPreview = styled(motion.div)`
   }
 `;
 
-const PhotoGrid = styled.div`
-  overflow: hidden;
+const PhotosGrid = styled.div`
   display: grid;
+  grid-template-columns: 1fr;
   grid-template-rows: repeat(4, 1fr);
-  gap: 2vh;
-  height: 100%;
-  flex: 1;
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 24px;
+
+  @media (max-width: 768px) {
+    gap: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 12px;
+    grid-auto-rows: 1fr;
+  }
 `;
 
 const MessageContainer = styled.div`
@@ -107,16 +116,29 @@ const MessageContainer = styled.div`
   box-sizing: border-box;
 `;
 
-const Photo = styled(motion.img)`
+const Photo = styled.div`
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  aspect-ratio: 4/3;
   border-radius: ${({ theme }) => theme.radii.medium};
+  overflow: hidden;
   box-shadow: ${({ theme }) => theme.shadows.card};
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 2px solid ${({ theme }) => theme.colors.border};
+  transition: all 0.3s ease;
 
-  &:hover {
-    transform: scale(1.03);
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  &:hover img {
+    transform: scale(1.05);
+  }
+
+  @media (max-width: 768px) {
+    aspect-ratio: 4/3;
+    min-height: 180px;
   }
 `;
 
@@ -443,8 +465,8 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
       const padding = 20;
-      const photoWidth = 250;
-      const photoHeight = 150;
+      const photoWidth = 300;
+      const photoHeight = 225; // Proporção 4:3
       const gap = 20;
       const borderRadius = 10;
 
@@ -487,223 +509,208 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
         });
 
         for (let i = 0; i < processedWords.length; i++) {
-          const testLine = line + processedWords[i] + " ";
+          const word = processedWords[i];
+          const testLine = line + (line ? " " : "") + word;
           const metrics = context.measureText(testLine);
-          const testWidth = metrics.width;
-
-          if (testWidth > maxWidth && i > 0) {
+          if (metrics.width > maxWidth && i > 0) {
             messageLines.push(line);
-            line = processedWords[i] + " ";
+            line = word;
           } else {
             line = testLine;
           }
         }
-
-        if (line) {
-          messageLines.push(line);
-        }
+        messageLines.push(line);
 
         messageHeight =
-          messageLines.length * lineHeight + messageBoxPadding * 2 + 30;
+          messageLines.length * lineHeight + messageBoxPadding * 2;
       }
 
-      canvas.width = photoWidth + 2 * padding;
-      canvas.height =
-        4 * photoHeight + 3 * gap + 2 * padding + messageHeight + 40;
+      // Calcular dimensões do canvas
+      const canvasWidth = photoWidth + padding * 2;
+      const canvasHeight =
+        photoHeight * 4 + gap * 3 + padding * 2 + messageHeight;
 
-      const isColor = border.startsWith("#");
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
 
-      if (isColor) {
+      // Preencher o fundo
+      if (border.startsWith("#")) {
         context.fillStyle = border;
-        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.fillRect(0, 0, canvasWidth, canvasHeight);
       } else {
-        const backgroundImage = new Image();
-        backgroundImage.src = border;
-        await new Promise((resolve) => {
-          backgroundImage.onload = resolve;
-        });
-        context.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
-      }
-
-      for (let i = 0; i < photos.length; i++) {
         const img = new Image();
-        img.src = photos[i];
+        img.src = border;
         await new Promise((resolve) => {
           img.onload = resolve;
         });
+        const pattern = context.createPattern(img, "repeat");
+        context.fillStyle = pattern;
+        context.fillRect(0, 0, canvasWidth, canvasHeight);
+      }
 
-        const y = padding + i * (photoHeight + gap);
+      // Carregar e desenhar as fotos
+      const photoPromises = photos.map((photoSrc) => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.src = photoSrc;
+          img.onload = () => resolve(img);
+        });
+      });
 
+      const photoImages = await Promise.all(photoPromises);
+
+      // Desenhar as fotos em layout 1x4
+      photoImages.forEach((img, index) => {
+        const posY = padding + index * (photoHeight + gap);
+
+        // Arredondar cantos
         context.save();
         context.beginPath();
-        context.moveTo(padding + borderRadius, y);
-        context.lineTo(padding + photoWidth - borderRadius, y);
+        context.moveTo(padding + borderRadius, posY);
+        context.lineTo(padding + photoWidth - borderRadius, posY);
         context.quadraticCurveTo(
           padding + photoWidth,
-          y,
+          posY,
           padding + photoWidth,
-          y + borderRadius
+          posY + borderRadius
         );
-        context.lineTo(padding + photoWidth, y + photoHeight - borderRadius);
+        context.lineTo(padding + photoWidth, posY + photoHeight - borderRadius);
         context.quadraticCurveTo(
           padding + photoWidth,
-          y + photoHeight,
+          posY + photoHeight,
           padding + photoWidth - borderRadius,
-          y + photoHeight
+          posY + photoHeight
         );
-        context.lineTo(padding + borderRadius, y + photoHeight);
+        context.lineTo(padding + borderRadius, posY + photoHeight);
         context.quadraticCurveTo(
           padding,
-          y + photoHeight,
+          posY + photoHeight,
           padding,
-          y + photoHeight - borderRadius
+          posY + photoHeight - borderRadius
         );
-        context.lineTo(padding, y + borderRadius);
-        context.quadraticCurveTo(padding, y, padding + borderRadius, y);
+        context.lineTo(padding, posY + borderRadius);
+        context.quadraticCurveTo(padding, posY, padding + borderRadius, posY);
         context.closePath();
         context.clip();
 
+        // Desenhar a imagem mantendo a proporção
         const imgRatio = img.width / img.height;
-        let drawWidth, drawHeight, offsetX, offsetY;
+        const targetRatio = photoWidth / photoHeight;
 
-        if (imgRatio > photoWidth / photoHeight) {
+        let drawWidth,
+          drawHeight,
+          offsetX = 0,
+          offsetY = 0;
+
+        if (imgRatio > targetRatio) {
+          // Imagem mais larga que o alvo
           drawHeight = photoHeight;
-          drawWidth = drawHeight * imgRatio;
-          offsetX = padding - (drawWidth - photoWidth) / 2;
-          offsetY = y;
+          drawWidth = img.width * (photoHeight / img.height);
+          offsetX = (photoWidth - drawWidth) / 2;
         } else {
+          // Imagem mais alta que o alvo
           drawWidth = photoWidth;
-          drawHeight = drawWidth / imgRatio;
-          offsetX = padding;
-          offsetY = y + (photoHeight - drawHeight) / 2;
+          drawHeight = img.height * (photoWidth / img.width);
+          offsetY = (photoHeight - drawHeight) / 2;
         }
 
-        context.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
-        context.restore();
-      }
-
-      if (message) {
-        const lastPhotoBottom =
-          padding + (photos.length - 1) * (photoHeight + gap) + photoHeight;
-        const messageY = lastPhotoBottom + 30;
-
-        const messageBoxPaddingVertical = 1.8 * 16;
-        const messageBoxPaddingHorizontal = 2 * 16;
-        const lineHeight = 25;
-        const messageWidth = 220;
-        const borderRadius = 10;
-        const maxTextWidth = messageWidth - messageBoxPaddingHorizontal * 2;
-
-        context.font = "600 19.2px Inter, Arial, sans-serif";
-
-        const words = message.split(" ");
-        let line = "";
-        let messageLines = [];
-
-        for (let i = 0; i < words.length; i++) {
-          const word = words[i];
-          const wordWidth = context.measureText(word).width;
-
-          if (wordWidth > maxTextWidth) {
-            if (line.length > 0) {
-              messageLines.push(line);
-              line = "";
-            }
-
-            let currentPart = "";
-            for (let j = 0; j < word.length; j++) {
-              const char = word[j];
-              const testPart = currentPart + char;
-              const testWidth = context.measureText(testPart).width;
-
-              if (testWidth > maxTextWidth && currentPart.length > 0) {
-                messageLines.push(currentPart);
-                currentPart = char;
-              } else {
-                currentPart = testPart;
-              }
-            }
-
-            if (currentPart.length > 0) {
-              line = currentPart + " ";
-            }
-          } else {
-            const testLine = line + word + " ";
-            const testWidth = context.measureText(testLine).width;
-
-            if (testWidth > maxTextWidth && line.length > 0) {
-              messageLines.push(line);
-              line = word + " ";
-            } else {
-              line = testLine;
-            }
-          }
-        }
-
-        if (line.trim().length > 0) {
-          messageLines.push(line);
-        }
-
-        const totalTextHeight = messageLines.length * lineHeight;
-
-        const messageBoxWidth = messageWidth;
-
-        const messageBoxHeight = Math.max(
-          40,
-          totalTextHeight + messageBoxPaddingVertical * 2
+        context.drawImage(
+          img,
+          padding + offsetX,
+          posY + offsetY,
+          drawWidth,
+          drawHeight
         );
 
-        const messageBoxX = padding + (photoWidth - messageBoxWidth) / 2;
+        context.restore();
+      });
+
+      // Desenhar a mensagem
+      if (message) {
+        const messageY = padding + photoHeight * 4 + gap * 3;
+        const messageX = padding;
+        const messageWidth = photoWidth;
         const messageBoxY = messageY;
 
-        context.fillStyle = isColor
-          ? "rgba(255, 255, 255, 0.2)"
-          : "rgba(0, 0, 0, 0.35)";
-
-        context.shadowColor = isColor
-          ? "rgba(255, 255, 255, 0.1)"
-          : "rgba(0, 0, 0, 0.1)";
+        context.fillStyle = "rgba(255, 255, 255, 0.2)";
+        context.shadowColor = "rgba(255, 255, 255, 0.1)";
         context.shadowBlur = 4;
+        context.shadowOffsetX = 0;
+        context.shadowOffsetY = 2;
+
+        // Desenhar o fundo da mensagem com cantos arredondados
+        context.beginPath();
+        context.moveTo(messageX + borderRadius, messageBoxY);
+        context.lineTo(messageX + messageWidth - borderRadius, messageBoxY);
+        context.quadraticCurveTo(
+          messageX + messageWidth,
+          messageBoxY,
+          messageX + messageWidth,
+          messageBoxY + borderRadius
+        );
+        context.lineTo(
+          messageX + messageWidth,
+          messageBoxY + messageHeight - borderRadius
+        );
+        context.quadraticCurveTo(
+          messageX + messageWidth,
+          messageBoxY + messageHeight,
+          messageX + messageWidth - borderRadius,
+          messageBoxY + messageHeight
+        );
+        context.lineTo(messageX + borderRadius, messageBoxY + messageHeight);
+        context.quadraticCurveTo(
+          messageX,
+          messageBoxY + messageHeight,
+          messageX,
+          messageBoxY + messageHeight - borderRadius
+        );
+        context.lineTo(messageX, messageBoxY + borderRadius);
+        context.quadraticCurveTo(
+          messageX,
+          messageBoxY,
+          messageX + borderRadius,
+          messageBoxY
+        );
+        context.closePath();
+        context.fill();
+
+        // Resetar sombra para o texto
+        context.shadowColor = "transparent";
+        context.shadowBlur = 0;
         context.shadowOffsetX = 0;
         context.shadowOffsetY = 0;
 
-        context.beginPath();
-        context.roundRect(
-          messageBoxX,
-          messageBoxY,
-          messageBoxWidth,
-          messageBoxHeight,
-          borderRadius
-        );
-        context.fill();
-        context.shadowBlur = 0;
-
+        // Desenhar o texto
         context.fillStyle = textColor;
         context.textAlign = "center";
-        context.textBaseline = "middle";
+        context.font = "bold 20px Inter, Arial, sans-serif";
 
-        const messageBoxCenterY = messageBoxY + messageBoxHeight / 2;
-
-        const totalLinesHeight = messageLines.length * lineHeight;
-        const firstLineY =
-          messageBoxCenterY - totalLinesHeight / 2 + lineHeight / 2;
+        const lineHeight = 25;
+        const textY = messageBoxY + 25;
 
         messageLines.forEach((line, index) => {
           context.fillText(
-            line.trim(),
-            messageBoxX + messageBoxWidth / 2,
-            firstLineY + index * lineHeight
+            line,
+            messageX + messageWidth / 2,
+            textY + index * lineHeight
           );
         });
       }
 
+      // Converter o canvas para uma imagem e fazer o download
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
       const link = document.createElement("a");
-      link.download = "captureyou-photos.png";
-      link.href = canvas.toDataURL("image/png");
+      link.href = dataUrl;
+      link.download = "captureyou-photos.jpg";
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
+
+      setIsLoading(false);
     } catch (error) {
       console.error("Erro ao gerar a imagem:", error);
-    } finally {
+      alert("Ocorreu um erro ao gerar a imagem. Por favor, tente novamente.");
       setIsLoading(false);
     }
   };
@@ -775,17 +782,13 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
             $whileHover={{ scale: 1.02 }}
             transition={{ duration: 0.3 }}
           >
-            <PhotoGrid>
+            <PhotosGrid>
               {photos.map((photo, index) => (
-                <Photo
-                  key={index}
-                  src={photo}
-                  alt={`Foto ${index + 1}`}
-                  $whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.2 }}
-                />
+                <Photo key={index}>
+                  <img src={photo} alt={`Foto ${index + 1}`} />
+                </Photo>
               ))}
-            </PhotoGrid>
+            </PhotosGrid>
 
             {message && (
               <MessageContainer $textColor={textColor} $border={border}>
@@ -952,7 +955,7 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
 
             <ActionButton
               variant="glass"
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/camera")}
               $whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
             >

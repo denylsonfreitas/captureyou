@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { motion } from "framer-motion";
-import { FaCamera, FaRedo, FaCheck } from "react-icons/fa";
+import { FaCamera, FaRedo, FaCheck, FaExchangeAlt } from "react-icons/fa";
 import Camera from "../components/Camera/Camera";
 import Button from "../components/UI/Button";
 import ThemeToggle from "../components/UI/ThemeToggle";
@@ -306,13 +306,14 @@ const Countdown = styled(motion.div)`
 `;
 
 const MemoizedCamera = memo(
-  ({ onCameraReady, isMirrored, selectedFilter, flashMode }) => {
+  ({ onCameraReady, isMirrored, selectedFilter, flashMode, facingMode }) => {
     return (
       <Camera
         onCameraReady={onCameraReady}
         isMirrored={isMirrored}
         selectedFilter={selectedFilter}
         flashMode={flashMode}
+        facingMode={facingMode}
       />
     );
   }
@@ -331,8 +332,8 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   const [flashMode, setFlashMode] = useState("off");
   const triggerFlashRef = useRef(null);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [facingMode, setFacingMode] = useState("user");
 
-  // Detectar se é um dispositivo móvel
   useEffect(() => {
     const checkMobileDevice = () => {
       const userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -346,7 +347,6 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
     checkMobileDevice();
   }, []);
 
-  // Função de callback memorizada para evitar re-renderizações
   const handleCameraReady = useRef((video, triggerFlash) => {
     videoRef.current = video;
     triggerFlashRef.current = triggerFlash;
@@ -359,30 +359,24 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   const capturePhoto = () => {
     if (photosRef.current.length >= 4) return;
 
-    // Acionar o flash se estiver ativado
     if (flashMode === "on" && triggerFlashRef.current) {
       triggerFlashRef.current();
     }
 
     const canvas = document.createElement("canvas");
 
-    // Configurar as dimensões da imagem capturada com proporção 4:3
-    const aspectRatio = 4 / 3; // Proporção largura/altura (4:3)
-    const maxWidth = 1200; // Largura máxima para a captura
+    const aspectRatio = 4 / 3;
+    const maxWidth = 1200;
 
     let width = videoRef.current.videoWidth;
     let height = videoRef.current.videoHeight;
 
-    // Calcular as dimensões mantendo a proporção 4:3
     if (width / height < aspectRatio) {
-      // Se o vídeo for mais alto que a proporção desejada, cortar o topo/base
       height = width / aspectRatio;
     } else {
-      // Se o vídeo for mais largo que a proporção desejada, cortar as laterais
       width = height * aspectRatio;
     }
 
-    // Redimensionar para o tamanho máximo mantendo a proporção
     if (width > maxWidth) {
       height = (height / width) * maxWidth;
       width = maxWidth;
@@ -392,38 +386,33 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
     canvas.height = height;
     const context = canvas.getContext("2d");
 
-    // Centralizar o recorte do vídeo
     const sourceX = (videoRef.current.videoWidth - width) / 2;
     const sourceY = (videoRef.current.videoHeight - height) / 2;
 
-    // Desenhar apenas a parte central do vídeo para manter a proporção
     context.drawImage(
       videoRef.current,
       sourceX,
       sourceY,
       width,
-      height, // Fonte (x, y, largura, altura)
+      height,
       0,
       0,
       width,
-      height // Destino (x, y, largura, altura)
+      height
     );
 
-    // Apply mirroring if needed
-    if (isMirrored) {
+    if (isMirrored && facingMode === "user") {
       context.save();
       context.scale(-1, 1);
       context.drawImage(canvas, -canvas.width, 0);
       context.restore();
     }
 
-    // Apply selected filter
     if (selectedFilter !== "none") {
       applyFilter(context, canvas.width, canvas.height, selectedFilter);
     }
 
-    // Reduzir a qualidade da imagem para economizar espaço
-    const photo = canvas.toDataURL("image/jpeg", 0.7); // Usando JPEG com 70% de qualidade
+    const photo = canvas.toDataURL("image/jpeg", 0.7);
     photosRef.current.push(photo);
     setPhotos([...photosRef.current]);
   };
@@ -467,9 +456,9 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   };
 
   const startAutoCapture = () => {
+    if (isCapturing) return;
     setIsCapturing(true);
-    photosRef.current = [];
-    setPhotos([]);
+
     let count = 3;
     setCountdownDisplay(count);
 
@@ -490,13 +479,11 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
     }, 1000);
   };
 
-  // Função para verificar o tamanho dos dados antes de armazenar
   const safelyStorePhotos = async (photos) => {
     try {
       const photosString = JSON.stringify(photos);
       const sizeInMB = (photosString.length * 2) / (1024 * 1024);
 
-      // Se o tamanho for maior que 4MB, tente reduzir a qualidade
       if (sizeInMB > 4) {
         return await compressPhotos(photos);
       }
@@ -509,10 +496,8 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
     }
   };
 
-  // Função para comprimir as fotos se necessário
   const compressPhotos = async (photos) => {
     try {
-      // Reduzir ainda mais a qualidade das imagens
       const compressPromises = photos.map((photo) =>
         reduceImageQuality(photo, 0.5)
       );
@@ -522,10 +507,9 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
       const sizeInMB = (compressedString.length * 2) / (1024 * 1024);
 
       if (sizeInMB > 5) {
-        // Se ainda for muito grande, armazene apenas a primeira foto
         const firstPhoto = [compressedPhotos[0]];
         localStorage.setItem("photos", JSON.stringify(firstPhoto));
-        return false; // Indica que houve problema
+        return false;
       }
 
       localStorage.setItem("photos", compressedString);
@@ -536,26 +520,22 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
     }
   };
 
-  // Função para reduzir a qualidade de uma imagem base64
   const reduceImageQuality = (base64Image, quality) => {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
 
-        // Manter a proporção 4:3 ao redimensionar
         const aspectRatio = 4 / 3;
         let width = img.width;
         let height = img.height;
 
-        // Ajustar para a proporção 4:3
         if (width / height < aspectRatio) {
           height = width / aspectRatio;
         } else {
           width = height * aspectRatio;
         }
 
-        // Reduzir também as dimensões da imagem
         const maxDimension = 1200;
         if (width > maxDimension) {
           height = (height / width) * maxDimension;
@@ -566,7 +546,6 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
         canvas.height = height;
         const ctx = canvas.getContext("2d");
 
-        // Centralizar a imagem no canvas
         const sourceX = (img.width - width) / 2;
         const sourceY = (img.height - height) / 2;
 
@@ -589,11 +568,9 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
 
   const handleFinish = async () => {
     try {
-      // Tenta armazenar as fotos com segurança
       const success = await safelyStorePhotos(photosRef.current);
 
       if (!success) {
-        // Se não conseguiu armazenar todas as fotos, mostre um alerta
         alert(
           "Suas fotos são muito grandes para armazenamento local. Apenas algumas foram salvas."
         );
@@ -620,6 +597,10 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
         ? "scaleX(1)"
         : "scaleX(-1)";
     }
+  };
+
+  const toggleCamera = () => {
+    setFacingMode(facingMode === "user" ? "environment" : "user");
   };
 
   const handleFilterChange = (filter) => {
@@ -649,6 +630,7 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                 isMirrored={isMirrored}
                 selectedFilter={selectedFilter}
                 flashMode={flashMode}
+                facingMode={facingMode}
               />
             </CameraWrapper>
 
@@ -686,6 +668,16 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                       >
                         <FaRedo />
                         Inverter
+                      </OptionButton>
+
+                      <OptionButton
+                        onClick={toggleCamera}
+                        $active={facingMode === "environment"}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <FaExchangeAlt />
+                        Trocar Câmera
                       </OptionButton>
 
                       <OptionButton
@@ -815,6 +807,16 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                       >
                         <FaRedo />
                         Inverter
+                      </OptionButton>
+
+                      <OptionButton
+                        onClick={toggleCamera}
+                        $active={facingMode === "environment"}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <FaExchangeAlt />
+                        Trocar Câmera
                       </OptionButton>
 
                       <OptionButton
