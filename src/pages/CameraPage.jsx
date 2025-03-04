@@ -803,17 +803,19 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
 
   const handleCameraCapabilitySelect = (capability, mode = "normal") => {
     if (deviceInfo.isMobile) {
-      if (capability === "user") {
-        // Para câmera frontal
-        setSelectedCamera(deviceInfo.frontCamera?.deviceId);
+      // Encontra a próxima câmera disponível
+      const currentIndex = deviceInfo.cameras.findIndex(
+        (camera) => camera.deviceId === selectedCamera
+      );
+      const nextIndex = (currentIndex + 1) % deviceInfo.cameras.length;
+      const nextCamera = deviceInfo.cameras[nextIndex];
+
+      setSelectedCamera(nextCamera.deviceId);
+      // Atualiza o facingMode baseado no tipo da câmera
+      if (nextCamera.label?.toLowerCase().includes("front")) {
         setFacingMode("user");
-      } else if (capability === "environment") {
-        // Para câmera traseira, usa a primeira câmera traseira disponível
-        const backCamera = deviceInfo.backCamera || deviceInfo.wideCamera;
-        if (backCamera) {
-          setSelectedCamera(backCamera.deviceId);
-          setFacingMode("environment");
-        }
+      } else {
+        setFacingMode("environment");
       }
       setCameraMode(mode);
       setShowCameraModal(false);
@@ -830,20 +832,19 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
 
   const handleCameraSwitch = () => {
     if (deviceInfo.isMobile) {
-      // Para dispositivos móveis, alterna entre frontal e traseira
-      if (facingMode === "user") {
-        // Se está na frontal, muda para traseira
-        const backCamera = deviceInfo.backCamera || deviceInfo.wideCamera;
-        if (backCamera) {
-          setSelectedCamera(backCamera.deviceId);
-          setFacingMode("environment");
-        }
+      // Para dispositivos móveis, alterna entre as câmeras disponíveis
+      const currentIndex = deviceInfo.cameras.findIndex(
+        (camera) => camera.deviceId === selectedCamera
+      );
+      const nextIndex = (currentIndex + 1) % deviceInfo.cameras.length;
+      const nextCamera = deviceInfo.cameras[nextIndex];
+
+      setSelectedCamera(nextCamera.deviceId);
+      // Atualiza o facingMode baseado no tipo da câmera
+      if (nextCamera.label?.toLowerCase().includes("front")) {
+        setFacingMode("user");
       } else {
-        // Se está na traseira, volta para frontal
-        if (deviceInfo.frontCamera) {
-          setSelectedCamera(deviceInfo.frontCamera.deviceId);
-          setFacingMode("user");
-        }
+        setFacingMode("environment");
       }
     } else {
       // Para desktop, abre o modal
