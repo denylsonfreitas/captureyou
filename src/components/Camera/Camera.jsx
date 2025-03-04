@@ -157,6 +157,7 @@ const Camera = ({
   flashMode = "off",
   facingMode = "user",
   deviceId = null,
+  cameraMode = "normal",
 }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -254,6 +255,11 @@ const Camera = ({
             aspectRatio: { ideal: 4 / 3 },
             facingMode: deviceId ? undefined : facingMode,
             deviceId: deviceId ? { exact: deviceId } : undefined,
+            ...(cameraMode === "wide" && {
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+              aspectRatio: { ideal: 16 / 9 },
+            }),
           },
         };
 
@@ -300,7 +306,14 @@ const Camera = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [onCameraReady, startRendering, triggerFlash, facingMode, deviceId]);
+  }, [
+    onCameraReady,
+    startRendering,
+    triggerFlash,
+    facingMode,
+    deviceId,
+    cameraMode,
+  ]);
 
   // Update rendering when filter or mirror settings change
   useEffect(() => {

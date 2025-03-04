@@ -482,7 +482,7 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   const navigate = useNavigate();
   const countdownRef = useRef(null);
   const [countdownDisplay, setCountdownDisplay] = useState(null);
-  const [isMirrored, setIsMirrored] = useState(true);
+  const [isMirrored, setIsMirrored] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState("none");
   const [flashMode, setFlashMode] = useState("off");
   const triggerFlashRef = useRef(null);
@@ -493,6 +493,7 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   const [availableCameras, setAvailableCameras] = useState([]);
   const [selectedCamera, setSelectedCamera] = useState(null);
   const [cameraCapabilities, setCameraCapabilities] = useState([]);
+  const [cameraMode, setCameraMode] = useState("normal");
 
   useEffect(() => {
     const checkMobileDevice = () => {
@@ -807,10 +808,6 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
 
   const toggleMirror = () => {
     setIsMirrored(!isMirrored);
-    if (videoRef.current) {
-      videoRef.current.style.transform =
-        isMirrored || facingMode !== "user" ? "scaleX(1)" : "scaleX(-1)";
-    }
   };
 
   const toggleCameraModal = () => {
@@ -823,8 +820,9 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
     setShowCameraModal(false);
   };
 
-  const handleCameraCapabilitySelect = (capability) => {
+  const handleCameraCapabilitySelect = (capability, mode = "normal") => {
     setFacingMode(capability);
+    setCameraMode(mode);
     setShowCameraModal(false);
   };
 
@@ -914,7 +912,10 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
 
                       <OptionButton
                         onClick={toggleCameraModal}
-                        $active={facingMode === "environment"}
+                        $active={
+                          facingMode === "environment" &&
+                          cameraMode === "normal"
+                        }
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
@@ -1053,7 +1054,10 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
 
                       <OptionButton
                         onClick={toggleCameraModal}
-                        $active={facingMode === "environment"}
+                        $active={
+                          facingMode === "environment" &&
+                          cameraMode === "normal"
+                        }
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
@@ -1200,29 +1204,28 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                             onClick={() =>
                               handleCameraCapabilitySelect("environment")
                             }
-                            $active={facingMode === "environment"}
+                            $active={
+                              facingMode === "environment" &&
+                              cameraMode === "normal"
+                            }
                           >
-                            <FaExchangeAlt /> Câmera Traseira
+                            <FaExchangeAlt /> Câmera Traseira Normal
                           </CameraOption>
                           {cameraCapabilities.includes("environment") && (
-                            <>
-                              <CameraOption
-                                onClick={() =>
-                                  handleCameraCapabilitySelect("environment")
-                                }
-                                $active={facingMode === "environment"}
-                              >
-                                <FaExchangeAlt /> Normal
-                              </CameraOption>
-                              <CameraOption
-                                onClick={() =>
-                                  handleCameraCapabilitySelect("environment")
-                                }
-                                $active={facingMode === "environment"}
-                              >
-                                <FaExchangeAlt /> Grande Angular
-                              </CameraOption>
-                            </>
+                            <CameraOption
+                              onClick={() =>
+                                handleCameraCapabilitySelect(
+                                  "environment",
+                                  "wide"
+                                )
+                              }
+                              $active={
+                                facingMode === "environment" &&
+                                cameraMode === "wide"
+                              }
+                            >
+                              <FaExchangeAlt /> Câmera Traseira Grande Angular
+                            </CameraOption>
                           )}
                         </>
                       ) : (
