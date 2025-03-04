@@ -802,9 +802,35 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   };
 
   const handleCameraCapabilitySelect = (capability, mode = "normal") => {
-    setFacingMode(capability);
-    setCameraMode(mode);
-    setShowCameraModal(false);
+    let selectedDeviceId = null;
+
+    if (deviceInfo.isMobile) {
+      switch (capability) {
+        case "user":
+          selectedDeviceId = deviceInfo.frontCamera?.deviceId;
+          break;
+        case "environment":
+          selectedDeviceId =
+            mode === "wide"
+              ? deviceInfo.wideCamera?.deviceId
+              : deviceInfo.backCamera?.deviceId;
+          break;
+        default:
+          break;
+      }
+    }
+
+    if (selectedDeviceId) {
+      setSelectedCamera(selectedDeviceId);
+      setFacingMode(capability);
+      setCameraMode(mode);
+      setShowCameraModal(false);
+    } else {
+      // Fallback para facingMode se não encontrar o deviceId específico
+      setFacingMode(capability);
+      setCameraMode(mode);
+      setShowCameraModal(false);
+    }
   };
 
   const handleFilterChange = (filter) => {
@@ -1183,18 +1209,20 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                           >
                             <FaExchangeAlt /> Câmera Frontal
                           </CameraOption>
-                          <CameraOption
-                            onClick={() =>
-                              handleCameraCapabilitySelect("environment")
-                            }
-                            $active={
-                              facingMode === "environment" &&
-                              cameraMode === "normal"
-                            }
-                          >
-                            <FaExchangeAlt /> Câmera Traseira Normal
-                          </CameraOption>
-                          {deviceInfo.hasWideCamera && (
+                          {deviceInfo.backCamera && (
+                            <CameraOption
+                              onClick={() =>
+                                handleCameraCapabilitySelect("environment")
+                              }
+                              $active={
+                                facingMode === "environment" &&
+                                cameraMode === "normal"
+                              }
+                            >
+                              <FaExchangeAlt /> Câmera Traseira Normal
+                            </CameraOption>
+                          )}
+                          {deviceInfo.wideCamera && (
                             <CameraOption
                               onClick={() =>
                                 handleCameraCapabilitySelect(

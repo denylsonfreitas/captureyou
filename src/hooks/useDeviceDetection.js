@@ -15,6 +15,10 @@ const useDeviceDetection = () => {
     isEdge: false,
     screenWidth: window.innerWidth,
     screenHeight: window.innerHeight,
+    cameras: [],
+    frontCamera: null,
+    backCamera: null,
+    wideCamera: null,
   });
 
   useEffect(() => {
@@ -45,23 +49,69 @@ const useDeviceDetection = () => {
       // Detecção de tela touch
       const hasTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
-      // Detecção de câmera grande angular
+      // Detecção de câmeras
+      let cameras = [];
+      let frontCamera = null;
+      let backCamera = null;
+      let wideCamera = null;
       let hasWideCamera = false;
+
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter(
-          (device) => device.kind === "videoinput"
-        );
+        cameras = devices.filter((device) => device.kind === "videoinput");
 
-        // Verifica se há múltiplas câmeras traseiras (indicativo de grande angular)
-        const backCameras = videoDevices.filter(
-          (device) =>
-            device.label.toLowerCase().includes("back") ||
-            device.label.toLowerCase().includes("traseira") ||
-            device.label.toLowerCase().includes("environment")
-        );
+        // Identifica as câmeras
+        cameras.forEach((camera) => {
+          const label = camera.label.toLowerCase();
 
-        hasWideCamera = backCameras.length > 1;
+          if (
+            label.includes("front") ||
+            label.includes("frontal") ||
+            label.includes("user")
+          ) {
+            frontCamera = camera;
+          } else if (
+            label.includes("back") ||
+            label.includes("traseira") ||
+            label.includes("environment")
+          ) {
+            if (label.includes("wide") || label.includes("grande angular")) {
+              wideCamera = camera;
+              hasWideCamera = true;
+            } else {
+              backCamera = camera;
+            }
+          }
+        });
+
+        // Se não encontrou as câmeras pelo label, tenta identificar pelo facingMode
+        if (!frontCamera || !backCamera) {
+          for (const camera of cameras) {
+            try {
+              const stream = await navigator.mediaDevices.getUserMedia({
+                video: { deviceId: { exact: camera.deviceId } },
+              });
+              const track = stream.getVideoTracks()[0];
+              const capabilities = track.getCapabilities();
+
+              if (capabilities.facingMode) {
+                const facingMode = Array.from(capabilities.facingMode)[0];
+                if (facingMode === "user" && !frontCamera) {
+                  frontCamera = camera;
+                } else if (facingMode === "environment" && !backCamera) {
+                  backCamera = camera;
+                }
+              }
+
+              stream.getTracks().forEach((track) => track.stop());
+            } catch (error) {
+              console.error(
+                `Erro ao verificar câmera ${camera.deviceId}:`,
+                error
+              );
+            }
+          }
+        }
       } catch (error) {
         console.error("Erro ao detectar câmeras:", error);
       }
@@ -80,6 +130,10 @@ const useDeviceDetection = () => {
         isEdge,
         screenWidth: window.innerWidth,
         screenHeight: window.innerHeight,
+        cameras,
+        frontCamera,
+        backCamera,
+        wideCamera,
       });
     };
 
