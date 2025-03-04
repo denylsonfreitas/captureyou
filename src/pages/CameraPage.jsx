@@ -1,8 +1,14 @@
 import React, { useRef, useState, useEffect, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { motion } from "framer-motion";
-import { FaCamera, FaRedo, FaCheck, FaExchangeAlt } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FaCamera,
+  FaRedo,
+  FaCheck,
+  FaExchangeAlt,
+  FaTimes,
+} from "react-icons/fa";
 import Camera from "../components/Camera/Camera";
 import Button from "../components/UI/Button";
 import ThemeToggle from "../components/UI/ThemeToggle";
@@ -355,8 +361,106 @@ const Countdown = styled(motion.div)`
   margin-right: 16px;
 `;
 
+const CameraModal = styled(motion.div)`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: ${({ theme }) => theme.blur.medium};
+  -webkit-backdrop-filter: ${({ theme }) => theme.blur.medium};
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const CameraModalContent = styled(motion.div)`
+  background: ${({ theme }) => theme.colors.cardBackground};
+  border-radius: ${({ theme }) => theme.radii.large};
+  padding: 24px;
+  width: 90%;
+  max-width: 400px;
+  position: relative;
+  box-shadow: ${({ theme }) => theme.shadows.elevated};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+`;
+
+const ModalTitle = styled.h3`
+  font-size: 18px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text};
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: ${({ theme }) => theme.colors.text};
+  cursor: pointer;
+  padding: 8px;
+  border-radius: ${({ theme }) => theme.radii.medium};
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.backgroundHover};
+  }
+
+  svg {
+    font-size: 20px;
+  }
+`;
+
+const CameraOptionsList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+const CameraOption = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: ${({ theme, $active }) =>
+    $active ? theme.colors.primary : theme.colors.backgroundHover};
+  border: 1px solid
+    ${({ theme, $active }) =>
+      $active ? theme.colors.primary : theme.colors.border};
+  border-radius: ${({ theme }) => theme.radii.medium};
+  color: ${({ theme, $active }) =>
+    $active ? theme.colors.white : theme.colors.text};
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${({ theme, $active }) =>
+      $active ? theme.colors.primary : theme.colors.backgroundHover};
+    transform: translateY(-2px);
+  }
+
+  svg {
+    font-size: 16px;
+    margin-right: 8px;
+  }
+`;
+
 const MemoizedCamera = memo(
-  ({ onCameraReady, isMirrored, selectedFilter, flashMode, facingMode }) => {
+  ({
+    onCameraReady,
+    isMirrored,
+    selectedFilter,
+    flashMode,
+    facingMode,
+    deviceId,
+  }) => {
     return (
       <Camera
         onCameraReady={onCameraReady}
@@ -364,6 +468,7 @@ const MemoizedCamera = memo(
         selectedFilter={selectedFilter}
         flashMode={flashMode}
         facingMode={facingMode}
+        deviceId={deviceId}
       />
     );
   }
@@ -384,6 +489,10 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [facingMode, setFacingMode] = useState("user");
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+  const [showCameraModal, setShowCameraModal] = useState(false);
+  const [availableCameras, setAvailableCameras] = useState([]);
+  const [selectedCamera, setSelectedCamera] = useState(null);
+  const [cameraCapabilities, setCameraCapabilities] = useState([]);
 
   useEffect(() => {
     const checkMobileDevice = () => {
@@ -406,6 +515,52 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+
+  useEffect(() => {
+    const getAvailableCameras = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(
+          (device) => device.kind === "videoinput"
+        );
+        setAvailableCameras(videoDevices);
+
+        if (videoDevices.length > 0) {
+          setSelectedCamera(videoDevices[0].deviceId);
+        }
+      } catch (error) {
+        console.error("Erro ao obter câmeras disponíveis:", error);
+      }
+    };
+
+    getAvailableCameras();
+  }, []);
+
+  useEffect(() => {
+    const getCameraCapabilities = async () => {
+      if (!selectedCamera) return;
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: selectedCamera },
+        });
+
+        const track = stream.getVideoTracks()[0];
+        const capabilities = track.getCapabilities();
+
+        if (capabilities.facingMode) {
+          const modes = Array.from(capabilities.facingMode);
+          setCameraCapabilities(modes);
+        }
+
+        stream.getTracks().forEach((track) => track.stop());
+      } catch (error) {
+        console.error("Erro ao obter capacidades da câmera:", error);
+      }
+    };
+
+    getCameraCapabilities();
+  }, [selectedCamera]);
 
   const handleCameraReady = useRef((video, triggerFlash) => {
     videoRef.current = video;
@@ -658,8 +813,19 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
     }
   };
 
-  const toggleCamera = () => {
-    setFacingMode(facingMode === "user" ? "environment" : "user");
+  const toggleCameraModal = () => {
+    setShowCameraModal(!showCameraModal);
+  };
+
+  const handleCameraSelect = (deviceId) => {
+    setSelectedCamera(deviceId);
+    setFacingMode("user"); // Reset facing mode when changing camera
+    setShowCameraModal(false);
+  };
+
+  const handleCameraCapabilitySelect = (capability) => {
+    setFacingMode(capability);
+    setShowCameraModal(false);
   };
 
   const handleFilterChange = (filter) => {
@@ -699,6 +865,7 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                 selectedFilter={selectedFilter}
                 flashMode={flashMode}
                 facingMode={facingMode}
+                deviceId={selectedCamera}
               />
             </CameraWrapper>
 
@@ -746,7 +913,7 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                       </OptionButton>
 
                       <OptionButton
-                        onClick={toggleCamera}
+                        onClick={toggleCameraModal}
                         $active={facingMode === "environment"}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -885,7 +1052,7 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                       </OptionButton>
 
                       <OptionButton
-                        onClick={toggleCamera}
+                        onClick={toggleCameraModal}
                         $active={facingMode === "environment"}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -995,6 +1162,87 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                 </>
               )}
             </PreviewWrapper>
+
+            <AnimatePresence>
+              {showCameraModal && (
+                <CameraModal
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                      setShowCameraModal(false);
+                    }
+                  }}
+                >
+                  <CameraModalContent
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.95, opacity: 0 }}
+                  >
+                    <ModalHeader>
+                      <ModalTitle>Opções de Câmera</ModalTitle>
+                      <CloseButton onClick={() => setShowCameraModal(false)}>
+                        <FaTimes />
+                      </CloseButton>
+                    </ModalHeader>
+
+                    <CameraOptionsList>
+                      {isMobileDevice ? (
+                        <>
+                          <CameraOption
+                            onClick={() => handleCameraCapabilitySelect("user")}
+                            $active={facingMode === "user"}
+                          >
+                            <FaExchangeAlt /> Câmera Frontal
+                          </CameraOption>
+                          <CameraOption
+                            onClick={() =>
+                              handleCameraCapabilitySelect("environment")
+                            }
+                            $active={facingMode === "environment"}
+                          >
+                            <FaExchangeAlt /> Câmera Traseira
+                          </CameraOption>
+                          {cameraCapabilities.includes("environment") && (
+                            <>
+                              <CameraOption
+                                onClick={() =>
+                                  handleCameraCapabilitySelect("environment")
+                                }
+                                $active={facingMode === "environment"}
+                              >
+                                <FaExchangeAlt /> Normal
+                              </CameraOption>
+                              <CameraOption
+                                onClick={() =>
+                                  handleCameraCapabilitySelect("environment")
+                                }
+                                $active={facingMode === "environment"}
+                              >
+                                <FaExchangeAlt /> Grande Angular
+                              </CameraOption>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        availableCameras.map((camera) => (
+                          <CameraOption
+                            key={camera.deviceId}
+                            onClick={() => handleCameraSelect(camera.deviceId)}
+                            $active={selectedCamera === camera.deviceId}
+                          >
+                            <FaExchangeAlt />{" "}
+                            {camera.label ||
+                              `Câmera ${camera.deviceId.slice(0, 4)}`}
+                          </CameraOption>
+                        ))
+                      )}
+                    </CameraOptionsList>
+                  </CameraModalContent>
+                </CameraModal>
+              )}
+            </AnimatePresence>
           </ContentWrapper>
 
           <ButtonsContainer

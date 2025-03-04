@@ -156,6 +156,7 @@ const Camera = ({
   selectedFilter = "none",
   flashMode = "off",
   facingMode = "user",
+  deviceId = null,
 }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -251,7 +252,8 @@ const Camera = ({
             width: { ideal: 1440 },
             height: { ideal: 1080 },
             aspectRatio: { ideal: 4 / 3 },
-            facingMode: facingMode,
+            facingMode: deviceId ? undefined : facingMode,
+            deviceId: deviceId ? { exact: deviceId } : undefined,
           },
         };
 
@@ -266,7 +268,9 @@ const Camera = ({
         } catch (err) {
           console.log("Tentando configuração alternativa da câmera");
           const fallbackStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: facingMode },
+            video: deviceId
+              ? { deviceId: { exact: deviceId } }
+              : { facingMode: facingMode },
           });
           videoRef.current.srcObject = fallbackStream;
           streamRef.current = fallbackStream;
@@ -296,7 +300,7 @@ const Camera = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [onCameraReady, startRendering, triggerFlash, facingMode]);
+  }, [onCameraReady, startRendering, triggerFlash, facingMode, deviceId]);
 
   // Update rendering when filter or mirror settings change
   useEffect(() => {
