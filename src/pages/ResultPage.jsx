@@ -440,10 +440,7 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
 
       if (savedPhotos.length === 0) {
         setStorageError(true);
-        console.warn("Nenhuma foto encontrada no armazenamento local");
       } else if (savedPhotos.length < 4) {
-        // Se tiver menos de 4 fotos, pode ser devido a problemas de armazenamento
-        console.warn(`Apenas ${savedPhotos.length} fotos foram recuperadas`);
         setStorageError(true);
       }
 
@@ -953,7 +950,7 @@ const ResultPage = ({ toggleTheme, isDarkTheme }) => {
               $whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
             >
-              <FaArrowLeft /> Voltar ao Início
+              <FaArrowLeft /> Voltar a Câmera
             </ActionButton>
           </EditPanel>
         </EditSection>

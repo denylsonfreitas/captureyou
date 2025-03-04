@@ -34,7 +34,6 @@ const SecondaryGradient = styled.div`
 `;
 
 const BackgroundGradients = ({ primary = {}, secondary = {} }) => {
-  // Transformar as props para usar o prefixo $ e evitar que sejam passadas para o DOM
   const transformProps = (props) => {
     const {
       background,

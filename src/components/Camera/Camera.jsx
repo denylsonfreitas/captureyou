@@ -272,7 +272,6 @@ const Camera = ({
           videoRef.current.srcObject = stream;
           streamRef.current = stream;
         } catch (err) {
-          console.log("Tentando configuração alternativa da câmera");
           const fallbackStream = await navigator.mediaDevices.getUserMedia({
             video: deviceId
               ? { deviceId: { exact: deviceId } }
@@ -315,16 +314,13 @@ const Camera = ({
     cameraMode,
   ]);
 
-  // Update rendering when filter or mirror settings change
   useEffect(() => {
     if (canvasRef.current && videoRef.current) {
       const canvas = canvasRef.current;
       const context = canvas.getContext("2d");
 
-      // Clear canvas
       context.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw video frame to canvas with current settings
       if (isMirrored) {
         context.save();
         context.scale(-1, 1);
@@ -340,7 +336,6 @@ const Camera = ({
         context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
       }
 
-      // Apply selected filter
       if (selectedFilter !== "none") {
         applyFilter(context, canvas.width, canvas.height, selectedFilter);
       }
