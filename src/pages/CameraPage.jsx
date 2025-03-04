@@ -495,6 +495,7 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   const [selectedCamera, setSelectedCamera] = useState(null);
   const [cameraCapabilities, setCameraCapabilities] = useState([]);
   const [cameraMode, setCameraMode] = useState("normal");
+  const [cameraKey, setCameraKey] = useState(0);
 
   const deviceInfo = useDeviceDetection();
 
@@ -830,21 +831,30 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
     setFlashMode(mode);
   };
 
-  const handleCameraSwitch = () => {
+  const handleCameraSwitch = async () => {
     if (deviceInfo.isMobile) {
-      // Para dispositivos móveis, alterna entre as câmeras disponíveis
-      const currentIndex = deviceInfo.cameras.findIndex(
-        (camera) => camera.deviceId === selectedCamera
-      );
-      const nextIndex = (currentIndex + 1) % deviceInfo.cameras.length;
-      const nextCamera = deviceInfo.cameras[nextIndex];
+      try {
+        // Para dispositivos móveis, alterna entre as câmeras disponíveis
+        const currentIndex = deviceInfo.cameras.findIndex(
+          (camera) => camera.deviceId === selectedCamera
+        );
+        const nextIndex = (currentIndex + 1) % deviceInfo.cameras.length;
+        const nextCamera = deviceInfo.cameras[nextIndex];
 
-      setSelectedCamera(nextCamera.deviceId);
-      // Atualiza o facingMode baseado no tipo da câmera
-      if (nextCamera.label?.toLowerCase().includes("front")) {
-        setFacingMode("user");
-      } else {
-        setFacingMode("environment");
+        // Atualiza o facingMode baseado no tipo da câmera
+        if (nextCamera.label?.toLowerCase().includes("front")) {
+          setFacingMode("user");
+        } else {
+          setFacingMode("environment");
+        }
+
+        // Atualiza a câmera selecionada
+        setSelectedCamera(nextCamera.deviceId);
+
+        // Força a reinicialização do componente Camera
+        setCameraKey((prev) => prev + 1);
+      } catch (error) {
+        console.error("Erro ao trocar câmera:", error);
       }
     } else {
       // Para desktop, abre o modal
@@ -876,6 +886,7 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
               }
             >
               <MemoizedCamera
+                key={cameraKey}
                 onCameraReady={handleCameraReady}
                 isMirrored={isMirrored}
                 selectedFilter={selectedFilter}
