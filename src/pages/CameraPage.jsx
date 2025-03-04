@@ -14,6 +14,7 @@ import Button from "../components/UI/Button";
 import ThemeToggle from "../components/UI/ThemeToggle";
 import BackButton from "../components/UI/BackButton";
 import BackgroundGradients from "../components/UI/BackgroundGradients";
+import useDeviceDetection from "../hooks/useDeviceDetection";
 
 const CameraContainer = styled.div`
   display: flex;
@@ -460,6 +461,7 @@ const MemoizedCamera = memo(
     flashMode,
     facingMode,
     deviceId,
+    cameraMode,
   }) => {
     return (
       <Camera
@@ -469,6 +471,7 @@ const MemoizedCamera = memo(
         flashMode={flashMode}
         facingMode={facingMode}
         deviceId={deviceId}
+        cameraMode={cameraMode}
       />
     );
   }
@@ -486,36 +489,14 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   const [selectedFilter, setSelectedFilter] = useState("none");
   const [flashMode, setFlashMode] = useState("off");
   const triggerFlashRef = useRef(null);
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [facingMode, setFacingMode] = useState("user");
-  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
   const [showCameraModal, setShowCameraModal] = useState(false);
   const [availableCameras, setAvailableCameras] = useState([]);
   const [selectedCamera, setSelectedCamera] = useState(null);
   const [cameraCapabilities, setCameraCapabilities] = useState([]);
   const [cameraMode, setCameraMode] = useState("normal");
 
-  useEffect(() => {
-    const checkMobileDevice = () => {
-      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-      const isMobile =
-        /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
-          userAgent.toLowerCase()
-        );
-      setIsMobileDevice(isMobile);
-    };
-
-    const handleResize = () => {
-      setScreenWidth(window.innerWidth);
-    };
-
-    checkMobileDevice();
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
+  const deviceInfo = useDeviceDetection();
 
   useEffect(() => {
     const getAvailableCameras = async () => {
@@ -849,7 +830,7 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
           <ContentWrapper>
             <CameraWrapper
               style={
-                isMobileDevice
+                deviceInfo.isMobile
                   ? {
                       maxHeight: "50vh",
                       marginBottom: "10px",
@@ -864,6 +845,7 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                 flashMode={flashMode}
                 facingMode={facingMode}
                 deviceId={selectedCamera}
+                cameraMode={cameraMode}
               />
             </CameraWrapper>
 
@@ -871,15 +853,16 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              style={isMobileDevice ? { maxWidth: "100%" } : {}}
+              style={deviceInfo.isMobile ? { maxWidth: "100%" } : {}}
             >
-              {isMobileDevice ? (
+              {deviceInfo.isMobile ? (
                 <div
                   style={{
                     display: "flex",
                     width: "100%",
-                    gap: screenWidth < 600 ? "8px" : "16px",
-                    flexDirection: screenWidth < 600 ? "column" : "row",
+                    gap: deviceInfo.screenWidth < 600 ? "8px" : "16px",
+                    flexDirection:
+                      deviceInfo.screenWidth < 600 ? "column" : "row",
                   }}
                 >
                   <CameraOptionsContainer
@@ -1192,7 +1175,7 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                     </ModalHeader>
 
                     <CameraOptionsList>
-                      {isMobileDevice ? (
+                      {deviceInfo.isMobile ? (
                         <>
                           <CameraOption
                             onClick={() => handleCameraCapabilitySelect("user")}
@@ -1211,7 +1194,7 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                           >
                             <FaExchangeAlt /> Câmera Traseira Normal
                           </CameraOption>
-                          {cameraCapabilities.includes("environment") && (
+                          {deviceInfo.hasWideCamera && (
                             <CameraOption
                               onClick={() =>
                                 handleCameraCapabilitySelect(
