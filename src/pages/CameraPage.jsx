@@ -8,6 +8,7 @@ import {
   FaCheck,
   FaExchangeAlt,
   FaTimes,
+  FaThLarge,
 } from "react-icons/fa";
 import Camera from "../components/Camera/Camera";
 import Button from "../components/UI/Button";
@@ -453,12 +454,62 @@ const CameraOption = styled.button`
   }
 `;
 
+const GridOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: ${({ theme }) => theme.radii.large};
+  overflow: hidden;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  &::before {
+    width: 1px;
+    height: 100%;
+    left: 33.33%;
+    top: 0;
+  }
+
+  &::after {
+    width: 1px;
+    height: 100%;
+    left: 66.66%;
+    top: 0;
+  }
+
+  & > div {
+    position: relative;
+    border-right: 1px solid rgba(255, 255, 255, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+
+    &:nth-child(3n) {
+      border-right: none;
+    }
+
+    &:nth-child(n + 7) {
+      border-bottom: none;
+    }
+  }
+`;
+
 const MemoizedCamera = memo(
   ({
     onCameraReady,
     isMirrored,
     selectedFilter,
-    flashMode,
     facingMode,
     deviceId,
     cameraMode,
@@ -468,7 +519,6 @@ const MemoizedCamera = memo(
         onCameraReady={onCameraReady}
         isMirrored={isMirrored}
         selectedFilter={selectedFilter}
-        flashMode={flashMode}
         facingMode={facingMode}
         deviceId={deviceId}
         cameraMode={cameraMode}
@@ -487,8 +537,6 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   const [countdownDisplay, setCountdownDisplay] = useState(null);
   const [isMirrored, setIsMirrored] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState("none");
-  const [flashMode, setFlashMode] = useState("off");
-  const triggerFlashRef = useRef(null);
   const [facingMode, setFacingMode] = useState("user");
   const [showCameraModal, setShowCameraModal] = useState(false);
   const [availableCameras, setAvailableCameras] = useState([]);
@@ -496,6 +544,7 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   const [cameraCapabilities, setCameraCapabilities] = useState([]);
   const [cameraMode, setCameraMode] = useState("normal");
   const [cameraKey, setCameraKey] = useState(0);
+  const [showGrid, setShowGrid] = useState(false);
 
   const deviceInfo = useDeviceDetection();
 
@@ -545,9 +594,8 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
     getCameraCapabilities();
   }, [selectedCamera]);
 
-  const handleCameraReady = useRef((video, triggerFlash) => {
+  const handleCameraReady = useRef((video) => {
     videoRef.current = video;
-    triggerFlashRef.current = triggerFlash;
   }).current;
 
   useEffect(() => {
@@ -557,12 +605,7 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   const capturePhoto = () => {
     if (photosRef.current.length >= 4) return;
 
-    if (flashMode === "on" && triggerFlashRef.current) {
-      triggerFlashRef.current();
-    }
-
     const canvas = document.createElement("canvas");
-
     const aspectRatio = 4 / 3;
     const maxWidth = 1200;
 
@@ -616,16 +659,15 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
   };
 
   const applyFilter = (context, width, height, filter) => {
-    // Simple filter implementations
     switch (filter) {
       case "grayscale":
         const imageData = context.getImageData(0, 0, width, height);
         const data = imageData.data;
         for (let i = 0; i < data.length; i += 4) {
           const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-          data[i] = avg; // red
-          data[i + 1] = avg; // green
-          data[i + 2] = avg; // blue
+          data[i] = avg;
+          data[i + 1] = avg;
+          data[i + 2] = avg;
         }
         context.putImageData(imageData, 0, 0);
         break;
@@ -723,7 +765,6 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
-
         const aspectRatio = 4 / 3;
         let width = img.width;
         let height = img.height;
@@ -792,19 +833,14 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
     setIsMirrored(!isMirrored);
   };
 
-  const toggleCameraModal = () => {
-    setShowCameraModal(!showCameraModal);
-  };
-
   const handleCameraSelect = (deviceId) => {
     setSelectedCamera(deviceId);
-    setFacingMode("user"); // Reset facing mode when changing camera
+    setFacingMode("user");
     setShowCameraModal(false);
   };
 
   const handleCameraCapabilitySelect = (capability, mode = "normal") => {
     if (deviceInfo.isMobile) {
-      // Encontra a próxima câmera disponível
       const currentIndex = deviceInfo.cameras.findIndex(
         (camera) => camera.deviceId === selectedCamera
       );
@@ -812,7 +848,6 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
       const nextCamera = deviceInfo.cameras[nextIndex];
 
       setSelectedCamera(nextCamera.deviceId);
-      // Atualiza o facingMode baseado no tipo da câmera
       if (nextCamera.label?.toLowerCase().includes("front")) {
         setFacingMode("user");
       } else {
@@ -827,37 +862,27 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
     setSelectedFilter(filter);
   };
 
-  const handleFlashMode = (mode) => {
-    setFlashMode(mode);
-  };
-
   const handleCameraSwitch = async () => {
     if (deviceInfo.isMobile) {
       try {
-        // Para dispositivos móveis, alterna entre as câmeras disponíveis
         const currentIndex = deviceInfo.cameras.findIndex(
           (camera) => camera.deviceId === selectedCamera
         );
         const nextIndex = (currentIndex + 1) % deviceInfo.cameras.length;
         const nextCamera = deviceInfo.cameras[nextIndex];
 
-        // Atualiza o facingMode baseado no tipo da câmera
         if (nextCamera.label?.toLowerCase().includes("front")) {
           setFacingMode("user");
         } else {
           setFacingMode("environment");
         }
 
-        // Atualiza a câmera selecionada
         setSelectedCamera(nextCamera.deviceId);
-
-        // Força a reinicialização do componente Camera
         setCameraKey((prev) => prev + 1);
       } catch (error) {
         console.error("Erro ao trocar câmera:", error);
       }
     } else {
-      // Para desktop, abre o modal
       setShowCameraModal(true);
     }
   };
@@ -885,16 +910,26 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                   : {}
               }
             >
-              <MemoizedCamera
-                key={cameraKey}
-                onCameraReady={handleCameraReady}
-                isMirrored={isMirrored}
-                selectedFilter={selectedFilter}
-                flashMode={flashMode}
-                facingMode={facingMode}
-                deviceId={selectedCamera}
-                cameraMode={cameraMode}
-              />
+              <div
+                style={{ position: "relative", width: "100%", height: "100%" }}
+              >
+                <MemoizedCamera
+                  key={cameraKey}
+                  onCameraReady={handleCameraReady}
+                  isMirrored={isMirrored}
+                  selectedFilter={selectedFilter}
+                  facingMode={facingMode}
+                  deviceId={selectedCamera}
+                  cameraMode={cameraMode}
+                />
+                {showGrid && (
+                  <GridOverlay>
+                    {[...Array(9)].map((_, i) => (
+                      <div key={i} />
+                    ))}
+                  </GridOverlay>
+                )}
+              </div>
             </CameraWrapper>
 
             <PreviewWrapper
@@ -952,15 +987,13 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                       </OptionButton>
 
                       <OptionButton
-                        onClick={() =>
-                          handleFlashMode(flashMode === "off" ? "on" : "off")
-                        }
-                        $active={flashMode === "on"}
+                        onClick={() => setShowGrid(!showGrid)}
+                        $active={showGrid}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        <FaCamera />
-                        Flash
+                        <FaThLarge />
+                        Grade
                       </OptionButton>
                     </OptionsRow>
 
@@ -1091,15 +1124,13 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                       </OptionButton>
 
                       <OptionButton
-                        onClick={() =>
-                          handleFlashMode(flashMode === "off" ? "on" : "off")
-                        }
-                        $active={flashMode === "on"}
+                        onClick={() => setShowGrid(!showGrid)}
+                        $active={showGrid}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
-                        <FaCamera />
-                        Flash
+                        <FaThLarge />
+                        Grade
                       </OptionButton>
                     </OptionsRow>
 
