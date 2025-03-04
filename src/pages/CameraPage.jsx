@@ -828,6 +828,29 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
     setFlashMode(mode);
   };
 
+  const handleCameraSwitch = () => {
+    if (deviceInfo.isMobile) {
+      // Para dispositivos móveis, alterna entre frontal e traseira
+      if (facingMode === "user") {
+        // Se está na frontal, muda para traseira
+        const backCamera = deviceInfo.backCamera || deviceInfo.wideCamera;
+        if (backCamera) {
+          setSelectedCamera(backCamera.deviceId);
+          setFacingMode("environment");
+        }
+      } else {
+        // Se está na traseira, volta para frontal
+        if (deviceInfo.frontCamera) {
+          setSelectedCamera(deviceInfo.frontCamera.deviceId);
+          setFacingMode("user");
+        }
+      }
+    } else {
+      // Para desktop, abre o modal
+      setShowCameraModal(true);
+    }
+  };
+
   return (
     <>
       <ThemeToggle toggleTheme={toggleTheme} isDarkTheme={isDarkTheme} />
@@ -907,11 +930,8 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                       </OptionButton>
 
                       <OptionButton
-                        onClick={toggleCameraModal}
-                        $active={
-                          facingMode === "environment" &&
-                          cameraMode === "normal"
-                        }
+                        onClick={handleCameraSwitch}
+                        $active={facingMode === "environment"}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
@@ -1049,11 +1069,8 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                       </OptionButton>
 
                       <OptionButton
-                        onClick={toggleCameraModal}
-                        $active={
-                          facingMode === "environment" &&
-                          cameraMode === "normal"
-                        }
+                        onClick={handleCameraSwitch}
+                        $active={facingMode === "environment"}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
@@ -1164,7 +1181,7 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
             </PreviewWrapper>
 
             <AnimatePresence>
-              {showCameraModal && (
+              {showCameraModal && !deviceInfo.isMobile && (
                 <CameraModal
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -1188,38 +1205,17 @@ const CameraPage = ({ toggleTheme, isDarkTheme }) => {
                     </ModalHeader>
 
                     <CameraOptionsList>
-                      {deviceInfo.isMobile ? (
-                        <>
-                          <CameraOption
-                            onClick={() => handleCameraCapabilitySelect("user")}
-                            $active={facingMode === "user"}
-                          >
-                            <FaExchangeAlt /> Câmera Frontal
-                          </CameraOption>
-                          {(deviceInfo.backCamera || deviceInfo.wideCamera) && (
-                            <CameraOption
-                              onClick={() =>
-                                handleCameraCapabilitySelect("environment")
-                              }
-                              $active={facingMode === "environment"}
-                            >
-                              <FaExchangeAlt /> Câmera Traseira
-                            </CameraOption>
-                          )}
-                        </>
-                      ) : (
-                        availableCameras.map((camera) => (
-                          <CameraOption
-                            key={camera.deviceId}
-                            onClick={() => handleCameraSelect(camera.deviceId)}
-                            $active={selectedCamera === camera.deviceId}
-                          >
-                            <FaExchangeAlt />{" "}
-                            {camera.label ||
-                              `Câmera ${camera.deviceId.slice(0, 4)}`}
-                          </CameraOption>
-                        ))
-                      )}
+                      {availableCameras.map((camera) => (
+                        <CameraOption
+                          key={camera.deviceId}
+                          onClick={() => handleCameraSelect(camera.deviceId)}
+                          $active={selectedCamera === camera.deviceId}
+                        >
+                          <FaExchangeAlt />{" "}
+                          {camera.label ||
+                            `Câmera ${camera.deviceId.slice(0, 4)}`}
+                        </CameraOption>
+                      ))}
                     </CameraOptionsList>
                   </CameraModalContent>
                 </CameraModal>
